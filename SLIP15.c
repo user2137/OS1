@@ -1,135 +1,217 @@
-//SLIP - 15
+/**Q.1 Write a C program to illustrate the concept of orphan process. Parent process creates  
+a child and terminates before child has finished its task. So child process becomes 
+orphan process. (Use fork(), sleep(), getpid(), getppid   */
 
-//Q1
-======================================================================================================================
+
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 int main()
 {
-    int a[100], n, i, j, temp;
+    pid_t pid;
 
-    printf("Enter number of elements: ");
-    scanf("%d", &n);
+    pid = fork();
 
-    srand(time(0));
-
-    printf("Random array:\n");
-
-    for(i = 0; i < n; i++)
+    if (pid < 0)
     {
-        a[i] = rand() % 100;
-        printf("%d ", a[i]);
+        printf("Fork failed!\n");
+        return 1;
     }
 
-    for(i = 1; i < n; i++)
+    else if (pid == 0)
     {
-        temp = a[i];
-        j = i - 1;
+        // Child process
+        printf("\nChild Process Started\n");
+        printf("Child PID  : %d\n", getpid());
+        printf("Parent PID : %d\n", getppid());
 
-        while(j >= 0 && a[j] > temp)
-        {
-            a[j + 1] = a[j];
-            j--;
-        }
+        printf("\nChild is sleeping for 5 seconds...\n");
+        sleep(5);
 
-        a[j + 1] = temp;
+        printf("\nChild Process After Parent Termination\n");
+        printf("Child PID  : %d\n", getpid());
+        printf("New Parent PID : %d\n", getppid());
+
+        printf("\nChild process completed.\n");
     }
 
-    printf("\n\nSorted array:\n");
-
-    for(i = 0; i < n; i++)
+    else
     {
-        printf("%d ", a[i]);
+        // Parent process
+        printf("\nParent Process\n");
+        printf("Parent PID : %d\n", getpid());
+        printf("Child PID  : %d\n", pid);
+
+        printf("\nParent is sleeping for 1 second...\n");
+        sleep(1);
+
+        printf("\nParent process terminating.\n");
+        exit(0);
     }
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
 
-CREATE DATABASE game_player_db;
+/**Q.2 Write the program to simulate Preemptive Priority scheduling. The arrival time  
+and first CPU-burst and priority for different n number of processes should be  
+input to the algorithm. The next CPU-burst should be generated randomly.  
+The output should give Gantt chart, turnaround time and waiting time for  
+each process. Also find the average waiting time and turnaround time  */
 
-CREATE TABLE Game
-(
-    gname VARCHAR(50) PRIMARY KEY,
-    noofplayers INT,
-    coachname VARCHAR(50),
-    captain_name VARCHAR(50)
-);
 
-CREATE TABLE Player
-(
-    pno INT PRIMARY KEY,
-    pname VARCHAR(50),
-    gname VARCHAR(50),
-    FOREIGN KEY(gname) REFERENCES Game(gname)
-);
 
-INSERT INTO Game VALUES
-('Hockey', 11, 'Dhoni', 'RAHUL'),
-('Cricket', 11, 'Dhoni', 'ROHIT'),
-('Football', 11, 'Tendulkar', 'AMIT'),
-('Kho Kho', 9, 'Sharma', 'SURESH'),
-('Kabaddi', 7, 'Patil', 'RAJ');
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-INSERT INTO Player VALUES
-(101, 'Rahul', 'Hockey'),
-(102, 'Amit', 'Hockey'),
-(103, 'Rohan', 'Cricket'),
-(104, 'Sahil', 'Cricket'),
-(105, 'Priya', 'Football'),
-(106, 'Neha', 'Football'),
-(107, 'Vikas', 'Kho Kho'),
-(108, 'Akash', 'Kabaddi');
+#define MAX 20
 
-//B) Queries
-======================================================================================================================
+int main()
+{
+    int n, i, time = 0, completed = 0;
+    int at[MAX], bt[MAX], rt[MAX];
+    int priority[MAX], ct[MAX], tat[MAX], wt[MAX];
+    int gantt_process[10000], gantt_time[10000];
+    int selected, min_priority;
+    int g = 0, prev = -2;
 
-//i) Display players playing Hockey
+    float avg_wt = 0, avg_tat = 0;
 
-SELECT P.*
-FROM Player P
-JOIN Game G
-ON P.gname = G.gname
-WHERE G.gname = 'Hockey';
+    srand(time(NULL));
 
-//ii) Find average number of players
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
 
-SELECT AVG(noofplayers) AS average_players
-FROM Game;
+    if (n <= 0 || n > MAX)
+    {
+        printf("Invalid number of processes!\n");
+        return 1;
+    }
 
-//iii) Delete players playing Kho Kho
+    // Input process details
+    for (i = 0; i < n; i++)
+    {
+        printf("\nEnter arrival time for P%d: ", i + 1);
+        scanf("%d", &at[i]);
 
-DELETE FROM Player
-WHERE gname = 'Kho Kho';
+        printf("Enter priority for P%d: ", i + 1);
+        scanf("%d", &priority[i]);
 
-//iv) Display players not playing Cricket
+        if (at[i] < 0 || priority[i] < 0)
+        {
+            printf("Invalid input!\n");
+            return 1;
+        }
 
-SELECT *
-FROM Player
-WHERE gname <> 'Cricket';
+        // Generate random burst time from 1 to 10
+        bt[i] = rand() % 10 + 1;
+        rt[i] = bt[i];
 
-//v) Update coach Dhoni to Tendulkar for Cricket
+        printf("Burst time of P%d = %d\n", i + 1, bt[i]);
+    }
 
-UPDATE Game
-SET coachname = 'Tendulkar'
-WHERE gname = 'Cricket'
-AND coachname = 'Dhoni';
+    // Preemptive Priority Scheduling
+    while (completed < n)
+    {
+        selected = -1;
+        min_priority = 999999;
 
-======================================================================================================================
-//C)
+        // Find highest-priority arrived process
+        for (i = 0; i < n; i++)
+        {
+            if (at[i] <= time && rt[i] > 0)
+            {
+                if (priority[i] < min_priority)
+                {
+                    min_priority = priority[i];
+                    selected = i;
+                }
+            }
+        }
 
-SELECT *
-FROM Game
-WHERE noofplayers =
-(
-    SELECT MAX(noofplayers)
-    FROM Game
-);
+        // CPU is idle
+        if (selected == -1)
+        {
+            if (prev != -1)
+            {
+                gantt_process[g] = -1;
+                gantt_time[g] = time;
+                g++;
+                prev = -1;
+            }
 
-======================================================================================================================
+            time++;
+            continue;
+        }
+
+        // Record Gantt chart when process changes
+        if (selected != prev)
+        {
+            gantt_process[g] = selected;
+            gantt_time[g] = time;
+            g++;
+            prev = selected;
+        }
+
+        // Execute process for one time unit
+        rt[selected]--;
+        time++;
+
+        // Check process completion
+        if (rt[selected] == 0)
+        {
+            ct[selected] = time;
+            completed++;
+        }
+    }
+
+    gantt_time[g] = time;
+
+    // Calculate TAT and WT
+    for (i = 0; i < n; i++)
+    {
+        tat[i] = ct[i] - at[i];
+        wt[i] = tat[i] - bt[i];
+
+        avg_wt += wt[i];
+        avg_tat += tat[i];
+    }
+
+    // Display Gantt chart
+    printf("\nGantt Chart:\n");
+
+    for (i = 0; i < g; i++)
+    {
+        if (gantt_process[i] == -1)
+            printf("| Idle ");
+        else
+            printf("| P%d ", gantt_process[i] + 1);
+    }
+
+    printf("|\n");
+
+    for (i = 0; i <= g; i++)
+        printf("%-6d", gantt_time[i]);
+
+    // Display process table
+    printf("\n\nProcess\tAT\tBT\tPriority\tCT\tTAT\tWT\n");
+
+    for (i = 0; i < n; i++)
+    {
+        printf("P%d\t%d\t%d\t%d\t\t%d\t%d\t%d\n",
+               i + 1, at[i], bt[i], priority[i],
+               ct[i], tat[i], wt[i]);
+    }
+
+    printf("\nAverage Waiting Time = %.2f",
+           avg_wt / n);
+
+    printf("\nAverage Turnaround Time = %.2f\n",
+           avg_tat / n);
+
+    return 0;
+}

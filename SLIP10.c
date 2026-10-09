@@ -1,184 +1,274 @@
-//SLIP - 10   
-   
-//Q1   
-======================================================================================================================   
-#include <stdio.h>   
-#include <stdlib.h>   
-#include <time.h>   
-   
-void merge(int a[], int low, int mid, int high)   
-{   
-    int i, j, k;   
-    int b[100];   
-   
-    i = low;   
-    j = mid + 1;   
-    k = low;   
-   
-    while(i <= mid && j <= high)   
-    {   
-        if(a[i] <= a[j])   
-        {   
-            b[k] = a[i];   
-            i++;   
-        }   
-        else   
-        {   
-            b[k] = a[j];   
-            j++;   
-        }   
-   
-        k++;   
-    }   
-   
-    while(i <= mid)   
-    {   
-        b[k] = a[i];   
-        i++;   
-        k++;   
-    }   
-   
-    while(j <= high)   
-    {   
-        b[k] = a[j];   
-        j++;   
-        k++;   
-    }   
-   
-    for(i = low; i <= high; i++)   
-    {   
-        a[i] = b[i];   
-    }   
-}   
-   
-void mergeSort(int a[], int low, int high)   
-{   
-    int mid;   
-   
-    if(low < high)   
-    {   
-        mid = (low + high) / 2;   
-   
-        mergeSort(a, low, mid);   
-        mergeSort(a, mid + 1, high);   
-        merge(a, low, mid, high);   
-    }   
-}   
-   
-int main()   
-{   
-    int a[100], n, i;   
-   
-    printf("Enter number of elements: ");   
-    scanf("%d", &n);   
-   
-    srand(time(0));   
-   
-    printf("Random array:\n");   
-   
-    for(i = 0; i < n; i++)   
-    {   
-        a[i] = rand() % 100;   
-        printf("%d ", a[i]);   
-    }   
-   
-    mergeSort(a, 0, n - 1);   
-   
-    printf("\n\nSorted array:\n");   
-   
-    for(i = 0; i < n; i++)   
-    {   
-        printf("%d ", a[i]);   
-    }   
-   
-    return 0;   
-}   
-======================================================================================================================   
-//DBMS   
-======================================================================================================================   
-   
-CREATE DATABASE account_customer_db;   
-   
-CREATE TABLE Customer   
-(   
-    custno INT PRIMARY KEY,   
-    cust_name VARCHAR(50),   
-    cust_city VARCHAR(50)   
-);   
-   
-CREATE TABLE Account   
-(   
-    acctno INT PRIMARY KEY,   
-    acct_type VARCHAR(20)   
-        CHECK(acct_type IN ('saving', 'current')),   
-    balance DECIMAL(12,2)   
-        CHECK(balance > 0),   
-    branch_name VARCHAR(50),   
-    custno INT,   
-    FOREIGN KEY(custno) REFERENCES Customer(custno)   
-);   
-   
-INSERT INTO Customer VALUES   
-(101, 'Rahul', 'Pune'),   
-(102, 'Sanjay', 'Mumbai'),   
-(103, 'Ramnath', 'Nashik'),   
-(104, 'Sneha', 'Pune'),   
-(105, 'Amit', 'Delhi');   
-   
-INSERT INTO Account VALUES   
-(1001, 'saving', 8000, 'M.G.Road', 101),   
-(1002, 'current', 15000, 'M.G.Road', 102),   
-(1003, 'saving', 12000, 'Camp', 103),   
-(1004, 'current', 25000, 'Nashik Road', 104),   
-(1005, 'saving', 6000, 'M.G.Road', 105),   
-(1006, 'saving', 9000, 'Camp', 101);   
-   
-//B) Queries   
-======================================================================================================================   
-   
-//i) Display saving accounts having balance greater than 5000   
-   
-SELECT *   
-FROM Account   
-WHERE acct_type = 'saving'   
-AND balance > 5000;   
-   
-//ii) Count customers in Pune   
-   
-SELECT COUNT(*) AS customer_count   
-FROM Customer   
-WHERE cust_city = 'Pune';   
-   
-//iii) Find total balance at branch M.G.Road   
-   
-SELECT SUM(balance) AS total_balance   
-FROM Account   
-WHERE branch_name = 'M.G.Road';   
-   
-//iv) Delete record whose customer name is Ramnath   
-   
-DELETE FROM Account   
-WHERE custno =   
-(   
-    SELECT custno   
-    FROM Customer   
-    WHERE cust_name = 'Ramnath'   
-);   
-   
-DELETE FROM Customer   
-WHERE cust_name = 'Ramnath';   
-   
-//v) Change city of Sanjay to Pune   
-   
-UPDATE Customer   
-SET cust_city = 'Pune'   
-WHERE cust_name = 'Sanjay';   
-======================================================================================================================   
-//C)   
-   
-SELECT C.cust_city, COUNT(A.acctno) AS account_holders   
-FROM Customer C   
-JOIN Account A   
-ON C.custno = A.custno   
-GROUP BY C.cust_city;   
-======================================================================================================================
+/**Q.1 Write the program to simulate Round Robin (RR) scheduling. The arrival  
+time and first CPU burst for different n number of processes should be  
+input to the algorithm. Also give the time quantum as input. The next CPU 
+burst should be generated randomly. The output should give Gantt chart, 
+turnaround time and waiting time for each process. Also find the average  
+waiting time and turnaround time.   */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define MAX 20
+
+struct Process {
+    int pid;
+    int at;
+    int bt;
+    int remaining;
+    int completion;
+    int turnaround;
+    int waiting;
+    int finished;
+};
+
+int main() {
+    struct Process p[MAX];
+    int n, tq;
+    int time = 0;
+    int completed = 0;
+    int queue[MAX * 100];
+    int front = 0, rear = 0;
+    int visited[MAX] = {0};
+    float avgWT = 0, avgTAT = 0;
+
+    srand(time(NULL));
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    printf("\nEnter Arrival Time and First CPU Burst:\n");
+
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+
+        printf("P%d Arrival Time: ", i + 1);
+        scanf("%d", &p[i].at);
+
+        printf("P%d First CPU Burst: ", i + 1);
+        scanf("%d", &p[i].bt);
+
+        p[i].remaining = p[i].bt;
+        p[i].finished = 0;
+        p[i].completion = 0;
+        p[i].turnaround = 0;
+        p[i].waiting = 0;
+    }
+
+    printf("\nEnter Time Quantum: ");
+    scanf("%d", &tq);
+
+    time = p[0].at;
+
+    for (int i = 1; i < n; i++) {
+        if (p[i].at < time)
+            time = p[i].at;
+    }
+
+    for (int i = 0; i < n; i++) {
+        if (p[i].at <= time && !visited[i]) {
+            queue[rear++] = i;
+            visited[i] = 1;
+        }
+    }
+
+    printf("\n\n========== GANTT CHART ==========\n");
+    printf(" ");
+
+    while (completed < n) {
+
+        if (front == rear) {
+            time++;
+
+            for (int i = 0; i < n; i++) {
+                if (p[i].at <= time && !visited[i]) {
+                    queue[rear++] = i;
+                    visited[i] = 1;
+                }
+            }
+
+            continue;
+        }
+
+        int index = queue[front++];
+
+        int execute;
+
+        if (p[index].remaining > tq)
+            execute = tq;
+        else
+            execute = p[index].remaining;
+
+        time += execute;
+        p[index].remaining -= execute;
+
+        printf("| P%d ", p[index].pid);
+
+        for (int i = 0; i < n; i++) {
+            if (p[i].at <= time && !visited[i]) {
+                queue[rear++] = i;
+                visited[i] = 1;
+            }
+        }
+
+        if (p[index].remaining > 0) {
+
+            if (execute == tq) {
+                int nextBurst = (rand() % 5) + 1;
+
+                printf("(Next Burst=%d) ", nextBurst);
+
+                p[index].remaining = nextBurst;
+            }
+
+            queue[rear++] = index;
+        }
+        else {
+            p[index].finished = 1;
+            p[index].completion = time;
+            completed++;
+
+            p[index].turnaround =
+                p[index].completion - p[index].at;
+
+            p[index].waiting =
+                p[index].turnaround - p[index].bt;
+
+            avgWT += p[index].waiting;
+            avgTAT += p[index].turnaround;
+        }
+    }
+
+    printf("|\n");
+
+    printf("\n========== PROCESS DETAILS ==========\n");
+
+    printf("\nPID\tAT\tBT\tCT\tTAT\tWT\n");
+    printf("------------------------------------------\n");
+
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               p[i].pid,
+               p[i].at,
+               p[i].bt,
+               p[i].completion,
+               p[i].turnaround,
+               p[i].waiting);
+    }
+
+    printf("\nAverage Waiting Time    = %.2f",
+           avgWT / n);
+
+    printf("\nAverage Turnaround Time = %.2f\n",
+           avgTAT / n);
+
+    return 0;
+}
+
+
+/**Q.2 Write a simulation program for disk scheduling using Look  
+algorithm. Accept total number of disk blocks, disk request string, 
+and current head position from the user. Display the list of request in 
+the order in which it is served. Also display the total number of head  
+moments.          
+55, 58, 39, 18, 90, 160, 150, 38.         
+Start Head Position: 100 
+Direction: Left                      */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    int n, i, j;
+    int request[100];
+    int head, direction;
+    int total_movement = 0;
+    int temp;
+
+    printf("Enter total number of disk blocks: ");
+    scanf("%d", &n);
+
+    printf("Enter number of disk requests: ");
+    scanf("%d", &j);
+
+    printf("Enter disk request string:\n");
+
+    for (i = 0; i < j; i++)
+        scanf("%d", &request[i]);
+
+    printf("Enter current head position: ");
+    scanf("%d", &head);
+
+    printf("Enter direction (1 = Left, 2 = Right): ");
+    scanf("%d", &direction);
+
+    for (i = 0; i < j - 1; i++)
+    {
+        for (int k = i + 1; k < j; k++)
+        {
+            if (request[i] > request[k])
+            {
+                temp = request[i];
+                request[i] = request[k];
+                request[k] = temp;
+            }
+        }
+    }
+
+    printf("\nRequest sequence: %d", head);
+
+    if (direction == 1)
+    {
+        for (i = j - 1; i >= 0; i--)
+        {
+            if (request[i] < head)
+            {
+                total_movement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+
+        for (i = 0; i < j; i++)
+        {
+            if (request[i] > head)
+            {
+                total_movement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < j; i++)
+        {
+            if (request[i] > head)
+            {
+                total_movement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+
+        for (i = j - 1; i >= 0; i--)
+        {
+            if (request[i] < head)
+            {
+                total_movement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+    }
+
+    printf("\n\nTotal Head Movement = %d cylinders\n",
+           total_movement);
+
+    return 0;
+}

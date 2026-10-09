@@ -1,164 +1,347 @@
-//SLIP - 14
+/**Q.1. Implement the C program that accepts an integer array. Main function forks  
+child process. Parent process sorts an integer array and passes the sorted array 
+to child process through the command line arguments of execve() system call. 
+The child process uses execve() system call to load new program that uses this  
+sorted array for performing the binary search the particular item in the array.   */
 
-//Q1
-======================================================================================================================
-
+/**Improved Parent Program (parent.c) */
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
-struct Student
-{
-    char Stud_name[50];
-    int Age;
-    float Percentage;
-};
+#define MAX 100
 
 int main()
 {
-    struct Student s[100], temp;
-    int n, i, j;
+    int a[MAX], n, i, j, temp;
+    pid_t pid;
 
-    printf("Enter number of students: ");
+    printf("Enter number of elements: ");
     scanf("%d", &n);
 
-    for(i = 0; i < n; i++)
+    if (n <= 0 || n > MAX)
     {
-        printf("\nEnter student name: ");
-        scanf("%s", s[i].Stud_name);
-
-        printf("Enter age: ");
-        scanf("%d", &s[i].Age);
-
-        printf("Enter percentage: ");
-        scanf("%f", &s[i].Percentage);
+        printf("Invalid input!\n");
+        return 1;
     }
 
-    for(i = 0; i < n - 1; i++)
-    {
-        int min = i;
+    printf("Enter array elements:\n");
 
-        for(j = i + 1; j < n; j++)
+    for (i = 0; i < n; i++)
+        scanf("%d", &a[i]);
+
+    // Sort array using Bubble Sort
+    for (i = 0; i < n - 1; i++)
+    {
+        for (j = 0; j < n - i - 1; j++)
         {
-            if(s[j].Percentage < s[min].Percentage)
+            if (a[j] > a[j + 1])
             {
-                min = j;
+                temp = a[j];
+                a[j] = a[j + 1];
+                a[j + 1] = temp;
             }
         }
-
-        temp = s[i];
-        s[i] = s[min];
-        s[min] = temp;
     }
 
-    FILE *fp;
+    printf("\nSorted Array: ");
 
-    fp = fopen("sortedstudent.txt", "w");
+    for (i = 0; i < n; i++)
+        printf("%d ", a[i]);
 
-    for(i = 0; i < n; i++)
+    printf("\n");
+
+    pid = fork();
+
+    if (pid < 0)
     {
-        fprintf(fp, "%s %d %.2f\n",
-                s[i].Stud_name,
-                s[i].Age,
-                s[i].Percentage);
+        printf("Fork failed!\n");
+        return 1;
     }
-
-    fclose(fp);
-
-    printf("\nStudents sorted by percentage:\n");
-
-    for(i = 0; i < n; i++)
+    else if (pid == 0)
     {
-        printf("%s %d %.2f\n",
-               s[i].Stud_name,
-               s[i].Age,
-               s[i].Percentage);
-    }
+        // Child process: pass sorted array to exec
+        char *args[MAX + 2];
 
-    printf("\nSorted data stored in sortedstudent.txt\n");
+        args[0] = "./search";
+
+        for (i = 0; i < n; i++)
+        {
+            args[i + 1] = malloc(12);
+            sprintf(args[i + 1], "%d", a[i]);
+        }
+
+        args[n + 1] = NULL;
+
+        execl("./search", "search", args[1],
+              args[2], args[3], args[4], args[5], NULL);
+
+        perror("exec failed");
+        exit(1);
+    }
+    else
+    {
+        // Parent waits for child
+        wait(NULL);
+        printf("\nParent process completed.\n");
+    }
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
+/**Improved Parent Program (parent.c) */
 
-CREATE DATABASE doctor_patient_db;
 
-CREATE TABLE Doctor
-(
-    dcode INT PRIMARY KEY,
-    doctor_name VARCHAR(50),
-    specialization VARCHAR(50),
-    address VARCHAR(100),
-    phone_no VARCHAR(15),
-    fees DECIMAL(10,2)
-);
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
-CREATE TABLE Patient
-(
-    pcode INT PRIMARY KEY,
-    Patient_name VARCHAR(50),
-    symptoms VARCHAR(100),
-    dcode INT,
-    FOREIGN KEY(dcode) REFERENCES Doctor(dcode)
-);
+#define MAX 100
 
-INSERT INTO Doctor VALUES
-(101, 'Dr. Patil', 'Orthopedic', 'Shivajinagar', '9876543210', 500),
-(102, 'Dr. Sharma', 'Neurologist', 'Sadashiv Peth', '9876543211', 800),
-(103, 'Dr. Kulkarni', 'Orthopedic', 'Shivajinagar', '9876543212', 600),
-(104, 'Dr. Deshmukh', 'Cardiologist', 'Camp', '9876543213', 700),
-(105, 'Dr. Joshi', 'Neurologist', 'Sadashiv Peth', '9876543214', 900);
+int main()
+{
+    int a[MAX], n, i, j, temp;
+    pid_t pid;
 
-INSERT INTO Patient VALUES
-(201, 'Mohan', 'Fever', 101),
-(202, 'Meena', 'Cold', 102),
-(203, 'Mahesh', 'Fever', 103),
-(204, 'Rohan', 'Headache', 104),
-(205, 'Priya', 'Fever', 105),
-(206, 'Amit', 'Cough', 101);
+    printf("Enter number of elements: ");
+    scanf("%d", &n);
 
-//B) Queries
-======================================================================================================================
+    if (n <= 0 || n > MAX)
+    {
+        printf("Invalid input!\n");
+        return 1;
+    }
 
-//i) Display patients whose name starts with M
+    printf("Enter array elements:\n");
 
-SELECT *
-FROM Patient
-WHERE Patient_name LIKE 'M%';
+    for (i = 0; i < n; i++)
+        scanf("%d", &a[i]);
 
-//ii) Count doctors having specialization Neurologist
+    // Bubble Sort
+    for (i = 0; i < n - 1; i++)
+    {
+        for (j = 0; j < n - i - 1; j++)
+        {
+            if (a[j] > a[j + 1])
+            {
+                temp = a[j];
+                a[j] = a[j + 1];
+                a[j + 1] = temp;
+            }
+        }
+    }
 
-SELECT COUNT(*) AS neurologist_count
-FROM Doctor
-WHERE specialization = 'Neurologist';
+    printf("\nSorted Array: ");
 
-//iii) Display patients suffering from Fever
+    for (i = 0; i < n; i++)
+        printf("%d ", a[i]);
 
-SELECT *
-FROM Patient
-WHERE symptoms = 'Fever';
+    printf("\n");
 
-//iv) Display specialization and phone number of doctors from Sadashiv Peth
+    pid = fork();
 
-SELECT specialization, phone_no
-FROM Doctor
-WHERE address = 'Sadashiv Peth';
+    if (pid < 0)
+    {
+        perror("fork failed");
+        return 1;
+    }
+    else if (pid == 0)
+    {
+        char *args[MAX + 2];
 
-//v) Change Dr. Patil address to Camp
+        args[0] = "search";
 
-UPDATE Doctor
-SET address = 'Camp'
-WHERE doctor_name = 'Dr. Patil';
+        for (i = 0; i < n; i++)
+        {
+            args[i + 1] = malloc(12);
+            sprintf(args[i + 1], "%d", a[i]);
+        }
 
-======================================================================================================================
-//C)
+        args[n + 1] = NULL;
 
-SELECT P.*
-FROM Patient P
-JOIN Doctor D
-ON P.dcode = D.dcode
-WHERE D.address = 'Shivajinagar'
-AND D.specialization = 'Orthopedic';
+        execv("./search", args);
 
-======================================================================================================================
+        perror("execv failed");
+        exit(1);
+    }
+    else
+    {
+        wait(NULL);
+        printf("\nParent process completed.\n");
+    }
+
+    return 0;
+}
+
+/**Program 2: Child Process (search.c) */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[])
+{
+    int a[100], n, key;
+    int low, high, mid, i, found = 0;
+
+    n = argc - 1;
+
+    if (n <= 0 || n > 100)
+    {
+        printf("Invalid array!\n");
+        return 1;
+    }
+
+    for (i = 0; i < n; i++)
+        a[i] = atoi(argv[i + 1]);
+
+    printf("\nChild Process (Binary Search)\n");
+
+    printf("Sorted Array: ");
+
+    for (i = 0; i < n; i++)
+        printf("%d ", a[i]);
+
+    printf("\nEnter element to search: ");
+    scanf("%d", &key);
+
+    low = 0;
+    high = n - 1;
+
+    while (low <= high)
+    {
+        mid = (low + high) / 2;
+
+        if (a[mid] == key)
+        {
+            found = 1;
+            break;
+        }
+        else if (a[mid] < key)
+        {
+            low = mid + 1;
+        }
+        else
+        {
+            high = mid - 1;
+        }
+    }
+
+    if (found)
+        printf("Element %d found at position %d\n",
+               key, mid + 1);
+    else
+        printf("Element %d not found\n", key);
+
+    return 0;
+}
+
+/**gcc parent.c -o parent
+gcc search.c -o search
+./parent               
+*/
+
+
+
+/**Q.2   Write the simulation program for demand paging and show the page scheduling  
+and total number of page faults according the FIFO page replacement 
+algorithm. Assume the memory of n frames. 
+Reference String: 3, 4, 5, 6, 3, 4, 7, 3, 4, 5, 6, 7, 2, 4, 6 */
+
+#include <stdio.h>
+
+#define MAX 100
+
+int main()
+{
+    int pages[MAX], frames[MAX];
+    int n, f, i, j;
+    int pointer = 0, faults = 0, found;
+
+    printf("Enter number of pages: ");
+    scanf("%d", &n);
+
+    if (n <= 0 || n > MAX)
+    {
+        printf("Invalid number of pages!\n");
+        return 1;
+    }
+
+    printf("Enter reference string:\n");
+
+    for (i = 0; i < n; i++)
+        scanf("%d", &pages[i]);
+
+    printf("Enter number of frames: ");
+    scanf("%d", &f);
+
+    if (f <= 0 || f > MAX)
+    {
+        printf("Invalid number of frames!\n");
+        return 1;
+    }
+
+    // Initialize frames
+    for (i = 0; i < f; i++)
+        frames[i] = -1;
+
+    printf("\nFIFO Page Replacement\n");
+    printf("\nPage\tFrames\t\tStatus\n");
+
+    for (i = 0; i < n; i++)
+    {
+        found = 0;
+
+        // Check if page is already present
+        for (j = 0; j < f; j++)
+        {
+            if (frames[j] == pages[i])
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            printf("%d\t", pages[i]);
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                    printf("- ");
+                else
+                    printf("%d ", frames[j]);
+            }
+
+            printf("\tHit\n");
+        }
+        else
+        {
+            // Page fault
+            frames[pointer] = pages[i];
+
+            pointer = (pointer + 1) % f;
+
+            faults++;
+
+            printf("%d\t", pages[i]);
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                    printf("- ");
+                else
+                    printf("%d ", frames[j]);
+            }
+
+            printf("\tPage Fault\n");
+        }
+    }
+
+    printf("\nTotal Page Faults = %d\n", faults);
+
+    return 0;
+}
+

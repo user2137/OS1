@@ -1,139 +1,232 @@
-//SLIP - 13
+/**Q.1 Write the program to simulate Non-preemptive Shortest Job First (SJF) scheduling.  
+The arrival time and first CPU burst for different n number of processes should  
+be input  to the algorithm. The next CPU-burst should be generated randomly. The  
+output should  give Gantt chart, turnaround time and waiting time for each process.  
+Also find the average waiting time and turnaround time.      */
 
-//Q1
-======================================================================================================================
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define MAX 20
 
 int main()
 {
-    int a[100], n, i, x;
-    int low, high, mid;
-    int found = 0;
+    int n, i, completed = 0, current = 0;
+    int at[MAX], bt[MAX], ct[MAX], tat[MAX], wt[MAX];
+    int done[MAX] = {0}, order[MAX];
+    int min, idx;
+    float avg_wt = 0, avg_tat = 0;
 
-    printf("Enter number of elements: ");
+    srand(time(NULL));
+
+    printf("Enter number of processes: ");
     scanf("%d", &n);
 
-    printf("Enter sorted array elements:\n");
-
-    for(i = 0; i < n; i++)
+    if (n <= 0 || n > MAX)
     {
-        scanf("%d", &a[i]);
+        printf("Invalid number of processes!\n");
+        return 1;
     }
 
-    printf("Enter element to search: ");
-    scanf("%d", &x);
-
-    low = 0;
-    high = n - 1;
-
-    while(low <= high)
+    for (i = 0; i < n; i++)
     {
-        mid = (low + high) / 2;
+        printf("Enter arrival time for P%d: ", i + 1);
+        scanf("%d", &at[i]);
 
-        if(a[mid] == x)
+        if (at[i] < 0)
         {
-            printf("Element found at position %d\n", mid + 1);
-            found = 1;
-            break;
+            printf("Invalid arrival time!\n");
+            return 1;
         }
-        else if(x < a[mid])
-        {
-            high = mid - 1;
-        }
-        else
-        {
-            low = mid + 1;
-        }
+
+        bt[i] = rand() % 10 + 1;
+
+        printf("Burst time of P%d = %d\n", i + 1, bt[i]);
     }
 
-    if(found == 0)
+    while (completed < n)
     {
-        printf("Element not found\n");
+        min = 9999;
+        idx = -1;
+
+        for (i = 0; i < n; i++)
+        {
+            if (done[i] == 0 && at[i] <= current)
+            {
+                if (bt[i] < min)
+                {
+                    min = bt[i];
+                    idx = i;
+                }
+            }
+        }
+
+        if (idx == -1)
+        {
+            current++;
+            continue;
+        }
+
+        current += bt[idx];
+
+        ct[idx] = current;
+        tat[idx] = ct[idx] - at[idx];
+        wt[idx] = tat[idx] - bt[idx];
+
+        done[idx] = 1;
+        order[completed] = idx;
+        completed++;
+
+        avg_wt += wt[idx];
+        avg_tat += tat[idx];
     }
+
+    printf("\nGantt Chart:\n");
+
+    printf("|");
+
+    for (i = 0; i < n; i++)
+        printf(" P%d |", order[i] + 1);
+
+    printf("\n");
+
+    printf("%d", at[order[0]]);
+
+    for (i = 0; i < n; i++)
+        printf("\t%d", ct[order[i]]);
+
+    printf("\n\nProcess\tAT\tBT\tCT\tTAT\tWT\n");
+
+    for (i = 0; i < n; i++)
+    {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               i + 1, at[i], bt[i], ct[i], tat[i], wt[i]);
+    }
+
+    printf("\nAverage Waiting Time = %.2f",
+           avg_wt / n);
+
+    printf("\nAverage Turnaround Time = %.2f\n",
+           avg_tat / n);
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
 
-CREATE DATABASE bus_route_db;
 
-CREATE TABLE Route
-(
-    Routeno INT PRIMARY KEY,
-    source VARCHAR(50),
-    destination VARCHAR(50),
-    no_of_stations INT
-);
+/***Q.2  Write a simulation program for disk scheduling using LOOK algorithm.  
+Accept total number of disk blocks, disk request string, and current head  
+position from the user. isplay the list of requests in the order in which it is served. 
+Also display the total number of head moments 
+15, 30, 55, 90, 125, 140, 170 
+Starting Head Position: 100          
+Direction: Left             */
 
-CREATE TABLE Bus
-(
-    Busno INT PRIMARY KEY,
-    capacity INT NOT NULL,
-    depot_name VARCHAR(50),
-    Routeno INT,
-    FOREIGN KEY(Routeno) REFERENCES Route(Routeno)
-);
 
-INSERT INTO Route VALUES
-(41, 'Pune', 'Hadapsar', 12),
-(42, 'Pimpri', 'Hadapsar', 15),
-(43, 'Pune Station', 'Swargate', 8),
-(44, 'Nashik', 'Sangamner', 14),
-(45, 'Pimpri', 'Vimannagar', 11);
+#include <stdio.h>
+#include <stdlib.h>
 
-INSERT INTO Bus VALUES
-(201, 40, 'Swargate', 41),
-(202, 30, 'Kothrud', 42),
-(203, 50, 'Swargate', 43),
-(204, 35, 'Sangamner', 44),
-(205, 45, 'Kothrud', 45),
-(206, 25, 'Swargate', 41);
+#define MAX 100
 
-//B) Queries
-======================================================================================================================
+int main()
+{
+    int request[MAX], n, head, i, j, temp;
+    int total = 0, direction;
 
-//i) Display buses at depot Swargate
+    printf("Enter number of disk requests: ");
+    scanf("%d", &n);
 
-SELECT *
-FROM Bus
-WHERE depot_name = 'Swargate';
+    if (n <= 0 || n > MAX)
+    {
+        printf("Invalid number of requests!\n");
+        return 1;
+    }
 
-//ii) Delete Bus 204
+    printf("Enter disk request sequence:\n");
 
-DELETE FROM Bus
-WHERE Busno = 204;
+    for (i = 0; i < n; i++)
+        scanf("%d", &request[i]);
 
-//iii) Display buses on route 41
+    printf("Enter initial head position: ");
+    scanf("%d", &head);
 
-SELECT *
-FROM Bus
-WHERE Routeno = 41;
+    printf("Enter direction (0 for Left, 1 for Right): ");
+    scanf("%d", &direction);
 
-//iv) Display routes having more than 10 stations
+    if (head < 0 || (direction != 0 && direction != 1))
+    {
+        printf("Invalid input!\n");
+        return 1;
+    }
 
-SELECT *
-FROM Route
-WHERE no_of_stations > 10;
+    for (i = 0; i < n - 1; i++)
+    {
+        for (j = 0; j < n - i - 1; j++)
+        {
+            if (request[j] > request[j + 1])
+            {
+                temp = request[j];
+                request[j] = request[j + 1];
+                request[j + 1] = temp;
+            }
+        }
+    }
 
-//v) Display routes starting from Pune station
+    printf("\nLOOK Disk Scheduling\n");
+    printf("Seek Sequence: %d", head);
 
-SELECT *
-FROM Route
-WHERE source = 'Pune Station';
+    if (direction == 0)
+    {
+        for (i = n - 1; i >= 0; i--)
+        {
+            if (request[i] < head)
+            {
+                total += abs(head - request[i]);
+                head = request[i];
 
-======================================================================================================================
-//C)
+                printf(" -> %d", head);
+            }
+        }
 
-DELETE FROM Bus
-WHERE Routeno IN
-(
-    SELECT Routeno
-    FROM Route
-    WHERE no_of_stations < 3
-);
+        for (i = 0; i < n; i++)
+        {
+            if (request[i] >= head)
+            {
+                total += abs(head - request[i]);
+                head = request[i];
 
-======================================================================================================================
+                printf(" -> %d", head);
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < n; i++)
+        {
+            if (request[i] > head)
+            {
+                total += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+
+        for (i = n - 1; i >= 0; i--)
+        {
+            if (request[i] <= head)
+            {
+                total += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+    }
+
+    printf("\n\nTotal Head Movements = %d cylinders\n", total);
+
+    return 0;
+}

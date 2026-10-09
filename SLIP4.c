@@ -1,131 +1,266 @@
-//SLIP - 4 
+/**   Q.1 Implement the Menu driven Banker's algorithm for accepting Allocation,      
+                 Max from user 
+a) Accept Available 
+b) Display Allocation, Max 
+c) Find Need and display It, 
+d) Display Available 
+   Consider the system with 3 resources types A, B, and C with 7, 2, 6 instances  
+   respectively consider the following snapshot: 
  
-//Q1 
-====================================================================================================================== 
-#include <stdio.h> 
-#include <stdlib.h> 
- 
-struct Student 
-{ 
-    char name[50]; 
-    char className[10]; 
-}; 
- 
-int main() 
-{ 
-    FILE *fp; 
-    struct Student s; 
-    char searchName[50]; 
-    int found = 0; 
- 
-    fp = fopen("student.txt", "r"); 
- 
-    if(fp == NULL) 
-    { 
-        printf("File cannot be opened\n"); 
-        return 0; 
-    } 
- 
-    printf("Enter student name to search: "); 
-    scanf("%s", searchName); 
- 
-    while(fscanf(fp, "%s %s", s.name, s.className) != EOF) 
-    { 
-        if(strcmp(s.name, searchName) == 0) 
-        { 
-            printf("Student Name: %s\n", s.name); 
-            printf("Class: %s\n", s.className); 
-            found = 1; 
-            break; 
-        } 
-    } 
- 
-    if(found == 0) 
-    { 
-        printf("Student not in the list\n"); 
-    } 
- 
-    fclose(fp); 
- 
-    return 0; 
-} 
-====================================================================================================================== 
-//DBMS 
-====================================================================================================================== 
+Process Allocation Request 
+ A B C A B C 
+P0 0 1 0 0 0 0 
+P1 4 0 0 5 2 2 
+P2 5 0 4 1 0 4 
+P3 4 3 3 4 4 4 
+P4 2 2 4 6 5 5  */
 
-CREATE DATABASE policy_customer_db; 
+#include <stdio.h>
+#include <stdlib.h>
 
-CREATE TABLE Customer 
-( 
-    cno INT PRIMARY KEY, 
-    cname VARCHAR(50), 
-    city VARCHAR(50), 
-    agent_name VARCHAR(50) 
-); 
+#define MAX_PROCESSES 10
+#define MAX_RESOURCES 10
 
-CREATE TABLE Policy 
-( 
-    pno INT PRIMARY KEY, 
-    pname VARCHAR(50), 
-    premium_amt DECIMAL(10,2), 
-    policy_type VARCHAR(20) 
-        CHECK(policy_type IN ('Yearly', 'Half-yearly', 'Monthly')), 
-    cno INT, 
-    FOREIGN KEY(cno) REFERENCES Customer(cno) 
-); 
+int main()
+{
+    int n = 5, m = 3;
 
-INSERT INTO Customer VALUES 
-(101, 'Rahul', 'Nashik', 'Amit'), 
-(102, 'Sneha', 'Pune', 'Rohit'), 
-(103, 'Amit', 'Mumbai', 'Suresh'), 
-(104, 'Priya', 'Nashik', 'Amit'), 
-(105, 'Rohan', 'Pune', 'Kiran'); 
+    int allocation[MAX_PROCESSES][MAX_RESOURCES] = {
+        {0, 1, 0},
+        {4, 0, 0},
+        {5, 0, 4},
+        {4, 3, 3},
+        {2, 2, 4}
+    };
 
-INSERT INTO Policy VALUES 
-(1, 'Jeevan Anand', 25000, 'Yearly', 101), 
-(2, 'Jeevan Anand', 18000, 'Monthly', 102), 
-(3, 'Life Plus', 30000, 'Half-yearly', 103), 
-(4, 'Jeevan Anand', 22000, 'Monthly', 104), 
-(5, 'Health Secure', 15000, 'Yearly', 105), 
-(6, 'Life Plus', 35000, 'Yearly', 101), 
-(7, 'Jeevan Anand', 20000, 'Half-yearly', 101); 
+    int max[MAX_PROCESSES][MAX_RESOURCES] = {
+        {0, 1, 0},
+        {9, 2, 2},
+        {6, 0, 8},
+        {8, 7, 7},
+        {8, 7, 9}
+    };
 
-//B) Queries 
-====================================================================================================================== 
+    int total_instances[3] = {7, 2, 6};
+    int available[MAX_RESOURCES];
+    int need[MAX_PROCESSES][MAX_RESOURCES];
+    int choice, i, j;
 
-//i) List details of all customers who live in city 
+    for (j = 0; j < m; j++)
+    {
+        int allocated_sum = 0;
 
-SELECT * 
-FROM Customer 
-WHERE city = 'Nashik'; 
+        for (i = 0; i < n; i++)
+        {
+            allocated_sum += allocation[i][j];
+        }
 
-//ii) Display average premium amount 
+        available[j] = total_instances[j] - allocated_sum;
 
-SELECT AVG(premium_amt) AS average_premium 
-FROM Policy; 
+        if (available[j] < 0)
+            available[j] = 0;
+    }
 
-//iii) Count customers who have taken Jeevan Anand policy 
+    for (i = 0; i < n; i++)
+    {
+        for (j = 0; j < m; j++)
+        {
+            need[i][j] = max[i][j] - allocation[i][j];
+        }
+    }
 
-SELECT COUNT(DISTINCT cno) AS customer_count 
-FROM Policy 
-WHERE pname = 'Jeevan Anand'; 
+    do
+    {
+        printf("\n--- Banker's Algorithm Menu ---\n");
+        printf("1. Accept Available Resources\n");
+        printf("2. Display Allocation and Max Matrix\n");
+        printf("3. Display Need Matrix\n");
+        printf("4. Display Available Resources\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
 
-//iv) Increase premium amount for Monthly policies by 10% 
+        switch (choice)
+        {
+            case 1:
+                printf("Enter available resources for A, B, C: ");
 
-UPDATE Policy 
-SET premium_amt = premium_amt * 1.10 
-WHERE policy_type = 'Monthly'; 
+                for (j = 0; j < m; j++)
+                {
+                    scanf("%d", &available[j]);
+                }
 
-//v) Display policy_type wise count of policies 
+                printf("Available resources updated successfully.\n");
+                break;
 
-SELECT policy_type, COUNT(*) AS policy_count 
-FROM Policy 
-GROUP BY policy_type; 
-====================================================================================================================== 
-//C) 
+            case 2:
+                printf("\nProcess\tAllocation (A B C)\tMax (A B C)\n");
 
-SELECT policy_type, AVG(premium_amt) AS average_premium 
-FROM Policy 
-GROUP BY policy_type 
-ORDER BY average_premium DESC 
-LIMIT 1; 
+                for (i = 0; i < n; i++)
+                {
+                    printf("P%d\t%d  %d  %d\t\t%d  %d  %d\n",
+                           i,
+                           allocation[i][0],
+                           allocation[i][1],
+                           allocation[i][2],
+                           max[i][0],
+                           max[i][1],
+                           max[i][2]);
+                }
+
+                break;
+
+            case 3:
+                printf("\nProcess\tNeed Matrix (A B C)\n");
+
+                for (i = 0; i < n; i++)
+                {
+                    printf("P%d\t%d  %d  %d\n",
+                           i,
+                           need[i][0],
+                           need[i][1],
+                           need[i][2]);
+                }
+
+                break;
+
+            case 4:
+                printf("\nAvailable Resources: A=%d, B=%d, C=%d\n",
+                       available[0],
+                       available[1],
+                       available[2]);
+                break;
+
+            case 5:
+                printf("Exiting program.\n");
+                exit(0);
+
+            default:
+                printf("Invalid choice! Please try again.\n");
+        }
+
+    } while (1);
+
+    return 0;
+}
+
+
+/**Q.2     Write a simulation program for disk scheduling using SCAN algorithm.  
+Accept total Number of disk blocks, disk request string, and current  
+head position from the user. Display the list of requests in the  
+order in which it is served. Also display the total number of head moments. 
+     82, 170, 43, 140, 24, 16, 190, 65 
+     Starting Head position= 50 
+     Direction: Left  */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    int request[100];
+    int n, diskSize;
+    int head;
+    int direction;
+
+    int i, j, temp;
+    int totalMovement = 0;
+
+    printf("Enter total number of disk blocks: ");
+    scanf("%d", &diskSize);
+
+    printf("Enter number of disk requests: ");
+    scanf("%d", &n);
+
+    printf("Enter disk request string:\n");
+
+    for (i = 0; i < n; i++)
+    {
+        scanf("%d", &request[i]);
+    }
+
+    printf("Enter current head position: ");
+    scanf("%d", &head);
+
+    printf("Enter direction (0 = Left, 1 = Right): ");
+    scanf("%d", &direction);
+
+    for (i = 0; i < n - 1; i++)
+    {
+        for (j = i + 1; j < n; j++)
+        {
+            if (request[i] > request[j])
+            {
+                temp = request[i];
+                request[i] = request[j];
+                request[j] = temp;
+            }
+        }
+    }
+
+    printf("\nSCAN Seek Sequence: %d", head);
+
+    if (direction == 0)
+    {
+        for (i = n - 1; i >= 0; i--)
+        {
+            if (request[i] < head)
+            {
+                totalMovement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+
+        totalMovement += head;
+        head = 0;
+
+        printf(" -> %d", head);
+
+        for (i = 0; i < n; i++)
+        {
+            if (request[i] > head)
+            {
+                totalMovement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < n; i++)
+        {
+            if (request[i] > head)
+            {
+                totalMovement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+
+        totalMovement += (diskSize - 1) - head;
+        head = diskSize - 1;
+
+        printf(" -> %d", head);
+
+        for (i = n - 1; i >= 0; i--)
+        {
+            if (request[i] < head)
+            {
+                totalMovement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+    }
+
+    printf("\n\nTotal Head Movement = %d cylinders\n",
+           totalMovement);
+
+    return 0;
+}

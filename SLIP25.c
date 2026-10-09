@@ -1,206 +1,288 @@
-//SLIP - 25
-
-//Q1
-======================================================================================================================
-
+/**Q.1 Write a C program to illustrate the concept of orphan process. Parent process 
+creates a child and terminates before child has finished its task. So child 
+process becomes orphan process. (Use fork(), sleep(), getpid(), getppid()  */
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
-
-struct Node
-{
-    int data;
-    struct Node *next;
-};
-
-struct Node *createNode(int data)
-{
-    struct Node *newNode;
-
-    newNode = (struct Node *)malloc(sizeof(struct Node));
-
-    newNode->data = data;
-    newNode->next = NULL;
-
-    return newNode;
-}
-
-struct Node *insertEnd(struct Node *head, int data)
-{
-    struct Node *newNode;
-    struct Node *temp;
-
-    newNode = createNode(data);
-
-    if(head == NULL)
-    {
-        return newNode;
-    }
-
-    temp = head;
-
-    while(temp->next != NULL)
-    {
-        temp = temp->next;
-    }
-
-    temp->next = newNode;
-
-    return head;
-}
-
-void display(struct Node *head)
-{
-    struct Node *temp = head;
-
-    while(temp != NULL)
-    {
-        printf("%d ", temp->data);
-        temp = temp->next;
-    }
-
-    printf("\n");
-}
 
 int main()
 {
-    struct Node *head = NULL;
-    int n, i, x;
+    pid_t pid;
 
-    printf("Enter number of elements: ");
-    scanf("%d", &n);
+    pid = fork();
 
-    printf("Enter elements:\n");
-
-    for(i = 0; i < n; i++)
+    if (pid < 0)
     {
-        scanf("%d", &x);
-        head = insertEnd(head, x);
+        printf("Fork failed!\n");
+        return 1;
     }
 
-    printf("\nLinked list:\n");
-    display(head);
+    else if (pid == 0)
+    {
+        // Child process
+        printf("Child process started.\n");
+        printf("Child PID  : %d\n", getpid());
+        printf("Parent PID : %d\n", getppid());
 
-    printf("\nEnter element to concatenate: ");
-    scanf("%d", &x);
+        printf("Child is sleeping...\n");
+        sleep(5);
 
-    head = insertEnd(head, x);
+        // Parent has terminated by now
+        printf("\nAfter parent termination:\n");
+        printf("Child PID  : %d\n", getpid());
+        printf("New Parent PID : %d\n", getppid());
 
-    printf("\nLinked list after concatenation:\n");
-    display(head);
+        printf("Child process completed.\n");
+    }
+
+    else
+    {
+        // Parent process
+        printf("Parent process started.\n");
+        printf("Parent PID : %d\n", getpid());
+        printf("Child PID  : %d\n", pid);
+
+        printf("Parent is terminating...\n");
+        exit(0);
+    }
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
 
-CREATE DATABASE employee_project_db25;
+/**Q.2 Write a C program that behaves like a shell which displays the command 
+prompt ‘$’. It accepts the command, tokenize the command line and  
+execute it by creating the child process. Also implement the additional 
+command  ‘search’ as   
+a. $ search   f filename pattern : It will search the first occurrence of 
+pattern in the given file  
+b. $ search a filename pattern : It will search all the occurrence of 
+pattern in the given file  
+c. $ search c filename pattern : It will count the number of occurrence 
+of pattern in the given file */
 
-CREATE TABLE Employee
-(
-    empno INT PRIMARY KEY,
-    emp_name VARCHAR(50),
-    city VARCHAR(50),
-    designation VARCHAR(50),
-    salary DECIMAL(10,2)
-);
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-CREATE TABLE Project
-(
-    projno INT PRIMARY KEY,
-    proj_name VARCHAR(50),
-    status VARCHAR(20)
-        CHECK(status IN ('Complete', 'In progress')),
-    start_date DATE
-);
+#define MAX 100
+#define SIZE 1024
 
-CREATE TABLE Employee_Project
-(
-    empno INT,
-    projno INT,
-    PRIMARY KEY(empno, projno),
-    FOREIGN KEY(empno) REFERENCES Employee(empno),
-    FOREIGN KEY(projno) REFERENCES Project(projno)
-);
+// Search first occurrence
+void searchA(char *filename, char *pattern)
+{
+    FILE *fp;
+    char line[SIZE];
+    int line_no = 0;
 
-INSERT INTO Employee VALUES
-(101, 'Rahul', 'Pune', 'Developer', 35000),
-(102, 'Sneha', 'Nashik', 'Tester', 30000),
-(103, 'Amit', 'Mumbai', 'Developer', 40000),
-(104, 'Pooja', 'Pune', 'Designer', 32000),
-(105, 'Rohan', 'Nashik', 'Developer', 45000),
-(106, 'Neha', 'Mumbai', 'Tester', 28000);
+    fp = fopen(filename, "r");
 
-INSERT INTO Project VALUES
-(10, 'Website', 'In progress', '2025-04-01'),
-(20, 'Mobile App', 'Complete', '2024-06-15'),
-(105, 'Banking System', 'In progress', '2025-05-10'),
-(30, 'Robotics', 'In progress', '2024-10-20');
+    if (fp == NULL)
+    {
+        perror("File opening failed");
+        return;
+    }
 
-INSERT INTO Employee_Project VALUES
-(101, 10),
-(102, 10),
-(103, 105),
-(104, 105),
-(105, 10),
-(106, 20);
+    while (fgets(line, sizeof(line), fp) != NULL)
+    {
+        line_no++;
 
-//B) Queries
-======================================================================================================================
+        if (strstr(line, pattern) != NULL)
+        {
+            printf("First occurrence found at line %d:\n", line_no);
+            printf("%s", line);
+            fclose(fp);
+            return;
+        }
+    }
 
-//i) Display names of employees working on project 105
+    printf("Pattern not found.\n");
 
-SELECT E.emp_name
-FROM Employee E
-JOIN Employee_Project EP
-ON E.empno = EP.empno
-WHERE EP.projno = 105;
+    fclose(fp);
+}
 
-//ii) Count projects having status In progress
+// Search all occurrences
+void searchB(char *filename, char *pattern)
+{
+    FILE *fp;
+    char line[SIZE];
+    int line_no = 0;
+    int found = 0;
 
-SELECT COUNT(*) AS project_count
-FROM Project
-WHERE status = 'In progress';
+    fp = fopen(filename, "r");
 
-//iii) Change start date of Robotics to 15/12/2022
+    if (fp == NULL)
+    {
+        perror("File opening failed");
+        return;
+    }
 
-UPDATE Project
-SET start_date = '2022-12-15'
-WHERE proj_name = 'Robotics';
+    while (fgets(line, sizeof(line), fp) != NULL)
+    {
+        line_no++;
 
-//iv) Increase salaries of employees working on project 10 by 5%
+        if (strstr(line, pattern) != NULL)
+        {
+            printf("Occurrence at line %d: %s",
+                   line_no, line);
+            found = 1;
+        }
+    }
 
-UPDATE Employee
-SET salary = salary + (salary * 5 / 100)
-WHERE empno IN
-(
-    SELECT empno
-    FROM Employee_Project
-    WHERE projno = 10
-);
+    if (!found)
+        printf("Pattern not found.\n");
 
-//v) Delete completed projects
+    fclose(fp);
+}
 
-DELETE FROM Employee_Project
-WHERE projno IN
-(
-    SELECT projno
-    FROM Project
-    WHERE status = 'Complete'
-);
+// Count occurrences
+void searchC(char *filename, char *pattern)
+{
+    FILE *fp;
+    char line[SIZE];
+    char *pos;
+    int count = 0;
 
-DELETE FROM Project
-WHERE status = 'Complete';
+    fp = fopen(filename, "r");
 
-======================================================================================================================
-//C)
+    if (fp == NULL)
+    {
+        perror("File opening failed");
+        return;
+    }
 
-SELECT P.proj_name, COUNT(EP.empno) AS employee_count
-FROM Project P
-JOIN Employee_Project EP
-ON P.projno = EP.projno
-GROUP BY P.projno, P.proj_name
-HAVING COUNT(EP.empno) > 3;
+    while (fgets(line, sizeof(line), fp) != NULL)
+    {
+        pos = line;
 
-======================================================================================================================
+        while ((pos = strstr(pos, pattern)) != NULL)
+        {
+            count++;
+            pos += strlen(pattern);
+        }
+    }
+
+    printf("Number of occurrences = %d\n", count);
+
+    fclose(fp);
+}
+
+// Handle search command
+void searchCommand(char *args[])
+{
+    if (args[1] == NULL ||
+        args[2] == NULL ||
+        args[3] == NULL)
+    {
+        printf("Usage: search a/b/c filename pattern\n");
+        return;
+    }
+
+    if (strcmp(args[1], "a") == 0)
+    {
+        searchA(args[2], args[3]);
+    }
+    else if (strcmp(args[1], "b") == 0)
+    {
+        searchB(args[2], args[3]);
+    }
+    else if (strcmp(args[1], "c") == 0)
+    {
+        searchC(args[2], args[3]);
+    }
+    else
+    {
+        printf("Invalid search option.\n");
+    }
+}
+
+int main()
+{
+    char command[SIZE];
+    char *args[MAX];
+    int argc;
+    pid_t pid;
+
+    while (1)
+    {
+        printf("$ ");
+        fflush(stdout);
+
+        if (fgets(command, sizeof(command), stdin) == NULL)
+            break;
+
+        // Remove newline
+        command[strcspn(command, "\n")] = '\0';
+
+        // Ignore empty command
+        if (strlen(command) == 0)
+            continue;
+
+        // Tokenize command
+        argc = 0;
+
+        args[argc] = strtok(command, " ");
+
+        while (args[argc] != NULL && argc < MAX - 1)
+        {
+            argc++;
+            args[argc] = strtok(NULL, " ");
+        }
+
+        args[argc] = NULL;
+
+        // Exit shell
+        if (strcmp(args[0], "exit") == 0)
+        {
+            printf("Exiting shell...\n");
+            break;
+        }
+
+        // Handle search command
+        if (strcmp(args[0], "search") == 0)
+        {
+            pid = fork();
+
+            if (pid < 0)
+            {
+                perror("Fork failed");
+            }
+            else if (pid == 0)
+            {
+                searchCommand(args);
+                exit(0);
+            }
+            else
+            {
+                wait(NULL);
+            }
+        }
+
+        // Execute normal Linux commands
+        else
+        {
+            pid = fork();
+
+            if (pid < 0)
+            {
+                perror("Fork failed");
+            }
+            else if (pid == 0)
+            {
+                execvp(args[0], args);
+
+                perror("Command execution failed");
+                exit(1);
+            }
+            else
+            {
+                wait(NULL);
+            }
+        }
+    }
+
+    return 0;
+}

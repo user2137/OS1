@@ -1,153 +1,200 @@
-//SLIP - 7   
-   
-//Q1   
-======================================================================================================================   
-#include <stdio.h>   
-   
-int main()   
-{   
-    int a[100], n, x, i, low, high, mid, position = -1;   
-   
-    printf("Enter number of elements: ");   
-    scanf("%d", &n);   
-   
-    printf("Enter sorted elements:\n");   
-   
-    for(i = 0; i < n; i++)   
-    {   
-        scanf("%d", &a[i]);   
-    }   
-   
-    printf("Enter element to search: ");   
-    scanf("%d", &x);   
-   
-    low = 0;   
-    high = n - 1;   
-   
-    while(low <= high)   
-    {   
-        mid = (low + high) / 2;   
-   
-        if(a[mid] == x)   
-        {   
-            position = mid + 1;   
-            break;   
-        }   
-        else if(x < a[mid])   
-        {   
-            high = mid - 1;   
-        }   
-        else   
-        {   
-            low = mid + 1;   
-        }   
-    }   
-   
-    if(position != -1)   
-    {   
-        printf("Element found at position %d\n", position);   
-    }   
-    else   
-    {   
-        printf("Element not found\n");   
-    }   
-   
-    return 0;   
-}   
-======================================================================================================================   
-//DBMS   
-======================================================================================================================   
-   
-CREATE DATABASE item_supplier_db;   
-   
-CREATE TABLE Item   
-(   
-    itemno INT PRIMARY KEY,   
-    name VARCHAR(50),   
-    quantity INT   
-);   
-   
-CREATE TABLE Supplier   
-(   
-    sno INT PRIMARY KEY,   
-    name VARCHAR(50),   
-    city VARCHAR(50)   
-);   
-   
-CREATE TABLE Item_Supplier   
-(   
-    itemno INT,   
-    sno INT,   
-    rate DECIMAL(10,2),   
-    PRIMARY KEY(itemno, sno),   
-    FOREIGN KEY(itemno) REFERENCES Item(itemno),   
-    FOREIGN KEY(sno) REFERENCES Supplier(sno)   
-);   
-   
-INSERT INTO Item VALUES   
-(101, 'Mouse', 50),   
-(102, 'Keyboard', 25),   
-(103, 'Monitor', 15),   
-(104, 'Printer', 8),   
-(105, 'Webcam', 5);   
-   
-INSERT INTO Supplier VALUES   
-(1, 'Mahesh', 'Pune'),   
-(2, 'Mohan', 'Mumbai'),   
-(3, 'Suresh', 'Nashik'),   
-(4, 'Ramesh', 'Delhi'),   
-(5, 'Amit', 'Pune');   
-   
-INSERT INTO Item_Supplier VALUES   
-(101, 1, 450),   
-(101, 2, 430),   
-(102, 1, 800),   
-(102, 3, 780),   
-(103, 2, 9500),   
-(104, 4, 12000),   
-(105, 5, 1500);   
-   
-//B) Queries   
-======================================================================================================================   
-   
-//i) Change quantity of Mouse to 80   
-   
-UPDATE Item   
-SET quantity = 80   
-WHERE name = 'Mouse';   
-   
-//ii) List suppliers whose name begins with M   
-   
-SELECT *   
-FROM Supplier   
-WHERE name LIKE 'M%';   
-   
-//iii) Display total count of items   
-   
-SELECT COUNT(*) AS item_count   
-FROM Item;   
-   
-//iv) List suppliers who do not live in Pune   
-   
-SELECT name   
-FROM Supplier   
-WHERE city <> 'Pune';   
-   
-//v) List items having quantity less than 10   
-   
-SELECT name   
-FROM Item   
-WHERE quantity < 10;   
-======================================================================================================================   
-//C)   
-   
-SELECT S.name   
-FROM Supplier S   
-JOIN Item_Supplier ISUP   
-ON S.sno = ISUP.sno   
-WHERE ISUP.rate =   
-(   
-    SELECT MIN(rate)   
-    FROM Item_Supplier   
-);   
-======================================================================================================================
+/**---------------------------------------------------------------------------------------------------  
+Q.1 Consider the following snapshot of the system.  
+  
+Process Allocation Max Available  
+ A B C D A B C D A B C D  
+P0 2 0 0 1 4 2 1 2 3 3 2 1  
+P1 3 1 2 1 5 2 5 2      
+P2 2 1 0 3 2 3 1 6      
+P3 1 3 1 2 1 4 2 4      
+P4 1 4 3 2 3 6 6 5      
+Using Resource –Request algorithm to Check whether the current system is in   
+safe state or not  */ 
+ 
+#include <stdio.h> 
+ 
+int main() 
+{ 
+    int n = 5, m = 4; 
+ 
+    int allocation[5][4] = { 
+        {2, 0, 0, 1}, 
+        {3, 1, 2, 1}, 
+        {2, 1, 0, 3}, 
+        {1, 3, 1, 2}, 
+        {1, 4, 3, 2} 
+    }; 
+ 
+    int max[5][4] = { 
+        {4, 2, 1, 2}, 
+        {5, 2, 5, 2}, 
+        {2, 3, 1, 6}, 
+        {1, 4, 2, 4}, 
+        {3, 6, 6, 5} 
+    }; 
+ 
+    int available[4] = {3, 3, 2, 1}; 
+ 
+    int need[5][4]; 
+    int finish[5] = {0}; 
+    int work[4]; 
+    int safeSequence[5]; 
+ 
+    int i, j, count = 0; 
+ 
+    printf("Need Matrix:\n"); 
+ 
+    for (i = 0; i < n; i++) 
+    { 
+        for (j = 0; j < m; j++) 
+        { 
+            need[i][j] = max[i][j] - allocation[i][j]; 
+            printf("%d ", need[i][j]); 
+        } 
+ 
+        printf("\n"); 
+    } 
+ 
+    for (j = 0; j < m; j++) 
+    { 
+        work[j] = available[j]; 
+    } 
+ 
+    while (count < n) 
+    { 
+        int found = 0; 
+ 
+        for (i = 0; i < n; i++) 
+        { 
+            if (finish[i] == 0) 
+            { 
+                int possible = 1; 
+ 
+                for (j = 0; j < m; j++) 
+                { 
+                    if (need[i][j] > work[j]) 
+                    { 
+                        possible = 0; 
+                        break; 
+                    } 
+                } 
+ 
+                if (possible) 
+                { 
+                    for (j = 0; j < m; j++) 
+                    { 
+                        work[j] += allocation[i][j]; 
+                    } 
+ 
+                    safeSequence[count] = i; 
+                    finish[i] = 1; 
+                    count++; 
+                    found = 1; 
+                } 
+            } 
+        } 
+ 
+        if (found == 0) 
+        { 
+            break; 
+        } 
+    } 
+ 
+    if (count == n) 
+    { 
+        printf("\nSystem is in SAFE STATE.\n"); 
+ 
+        printf("Safe Sequence: "); 
+ 
+        for (i = 0; i < n; i++) 
+        { 
+            printf("P%d", safeSequence[i]); 
+ 
+            if (i != n - 1) 
+                printf(" -> "); 
+        } 
+ 
+        printf("\n"); 
+    } 
+    else 
+    { 
+        printf("\nSystem is NOT in SAFE STATE.\n"); 
+    } 
+ 
+    return 0; 
+} 
+
+
+/**  Q2. Write a program that demonstrates the use of nice() system call. After a        
+    child process is started using fork(), assign higher priority to the child using        
+    nice()system call.*/ 
+ 
+#include <stdio.h> 
+#include <unistd.h> 
+#include <sys/types.h> 
+#include <sys/wait.h> 
+#include <errno.h> 
+#include <stdlib.h> 
+ 
+int main() 
+{ 
+    pid_t pid; 
+ 
+    printf("Parent Process Started\n"); 
+    printf("Parent PID = %d\n", getpid()); 
+ 
+    pid = fork(); 
+ 
+    if (pid < 0) 
+    { 
+        perror("fork failed"); 
+        return 1; 
+    } 
+ 
+    else if (pid == 0) 
+    { 
+        int oldNice, newNice; 
+ 
+        printf("\nChild Process Started\n"); 
+        printf("Child PID = %d\n", getpid()); 
+ 
+        oldNice = nice(0); 
+ 
+        printf("Child Initial Nice Value = %d\n", oldNice); 
+ 
+        errno = 0; 
+ 
+        newNice = nice(-5); 
+ 
+        if (newNice == -1 && errno != 0) 
+        { 
+            perror("nice"); 
+        } 
+        else 
+        { 
+            printf("Child Nice Value after nice(-5) = %d\n", 
+                   newNice); 
+            printf("Child priority has been increased.\n"); 
+        } 
+ 
+        printf("Child is executing...\n"); 
+ 
+        for (long i = 0; i < 500000000; i++) 
+        { 
+        } 
+ 
+        printf("Child Process Finished\n"); 
+    } 
+ 
+    else 
+    { 
+        printf("\nParent waiting for child...\n"); 
+ 
+        wait(NULL); 
+ 
+        printf("Child Process Completed.\n"); 
+        printf("Parent Process Finished.\n"); 
+    } 
+ 
+    return 0; 
+}

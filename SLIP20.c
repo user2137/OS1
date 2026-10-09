@@ -1,206 +1,209 @@
-//SLIP - 20
+/**Q.1 Write a simulation program for disk scheduling using LOOK algorithm. 
+Accept total number of disk blocks, disk request string, and current head 
+position from the user. Display the list of requests in the order in which it  
+is served. Also display the total number of head moments.  
+86, 147, 91, 177, 45, 12, 130 
+Starting Head Position: 60 
+Direction: Right           */
 
-//Q1
-======================================================================================================================
 
 #include <stdio.h>
 #include <stdlib.h>
 
-struct Employee
-{
-    char name[50];
-    int age;
-};
-
-void merge(struct Employee emp[], int low, int mid, int high)
-{
-    struct Employee temp[100];
-    int i, j, k;
-
-    i = low;
-    j = mid + 1;
-    k = low;
-
-    while(i <= mid && j <= high)
-    {
-        if(emp[i].age <= emp[j].age)
-        {
-            temp[k] = emp[i];
-            i++;
-        }
-        else
-        {
-            temp[k] = emp[j];
-            j++;
-        }
-
-        k++;
-    }
-
-    while(i <= mid)
-    {
-        temp[k] = emp[i];
-        i++;
-        k++;
-    }
-
-    while(j <= high)
-    {
-        temp[k] = emp[j];
-        j++;
-        k++;
-    }
-
-    for(i = low; i <= high; i++)
-    {
-        emp[i] = temp[i];
-    }
-}
-
-void mergeSort(struct Employee emp[], int low, int high)
-{
-    int mid;
-
-    if(low < high)
-    {
-        mid = (low + high) / 2;
-
-        mergeSort(emp, low, mid);
-        mergeSort(emp, mid + 1, high);
-
-        merge(emp, low, mid, high);
-    }
-}
-
 int main()
 {
-    struct Employee emp[100];
-    int n, i;
-    FILE *fp;
+    int n, i, j, head, temp;
+    int requests[100];
+    int total = 0, current;
+    int pos = 0;
 
-    printf("Enter number of employees: ");
+    printf("Enter number of disk requests: ");
     scanf("%d", &n);
 
-    fp = fopen("employee.txt", "w");
-
-    for(i = 0; i < n; i++)
+    if (n <= 0 || n > 100)
     {
-        printf("\nEnter employee name: ");
-        scanf("%s", emp[i].name);
-
-        printf("Enter age: ");
-        scanf("%d", &emp[i].age);
-
-        fprintf(fp, "%s %d\n", emp[i].name, emp[i].age);
+        printf("Invalid number of requests!\n");
+        return 1;
     }
 
-    fclose(fp);
+    printf("Enter disk request queue:\n");
 
-    mergeSort(emp, 0, n - 1);
+    for (i = 0; i < n; i++)
+        scanf("%d", &requests[i]);
 
-    fp = fopen("sortedemponage.txt", "w");
+    printf("Enter initial head position: ");
+    scanf("%d", &head);
 
-    for(i = 0; i < n; i++)
+    current = head;
+
+    // Sort requests in ascending order
+    for (i = 0; i < n - 1; i++)
     {
-        fprintf(fp, "%s %d\n", emp[i].name, emp[i].age);
+        for (j = 0; j < n - i - 1; j++)
+        {
+            if (requests[j] > requests[j + 1])
+            {
+                temp = requests[j];
+                requests[j] = requests[j + 1];
+                requests[j + 1] = temp;
+            }
+        }
     }
 
-    fclose(fp);
+    // Find first request greater than or equal to head
+    while (pos < n && requests[pos] < head)
+        pos++;
 
-    printf("\nEmployees sorted by age:\n");
+    printf("\nLOOK Disk Scheduling\n");
+    printf("Seek Sequence: %d", head);
 
-    for(i = 0; i < n; i++)
+    // Move right
+    for (i = pos; i < n; i++)
     {
-        printf("%s %d\n", emp[i].name, emp[i].age);
+        total += abs(requests[i] - current);
+        current = requests[i];
+
+        printf(" -> %d", current);
     }
 
-    printf("\nSorted data stored in sortedemponage.txt\n");
+    // Reverse direction and move left
+    for (i = pos - 1; i >= 0; i--)
+    {
+        total += abs(requests[i] - current);
+        current = requests[i];
+
+        printf(" -> %d", current);
+    }
+
+    printf("\n\nTotal Head Movements = %d\n", total);
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
 
-CREATE DATABASE customer_account_db;
+/**Q.2 Write the simulation program to implement demand paging and show  
+the page scheduling and total number of page faults according to the LRU  
+(using counter method) page replacement algorithm. Assume the memory  
+of n   frames. 
+Reference String : 3,5,7,2,5,1,2,3,1,3,5,3,1,6,2    */
 
-CREATE TABLE Customer
-(
-    cust_no INT PRIMARY KEY,
-    cust_name VARCHAR(50),
-    cust_city VARCHAR(50)
-);
 
-CREATE TABLE Account
-(
-    acc_no INT PRIMARY KEY,
-    acc_type VARCHAR(20)
-        CHECK(acc_type IN ('Saving', 'Current')),
-    balance DECIMAL(12,2),
-    cust_no INT,
-    FOREIGN KEY(cust_no) REFERENCES Customer(cust_no)
-);
+#include <stdio.h>
 
-INSERT INTO Customer VALUES
-(101, 'Rahul', 'Delhi'),
-(102, 'Sneha', 'Pune'),
-(103, 'Amit', 'Ahilyanagar'),
-(104, 'Pooja', 'Mumbai'),
-(105, 'Sahil', 'Pune');
+#define MAX 100
 
-INSERT INTO Account VALUES
-(101123, 'Current', 1200000, 101),
-(101124, 'Saving', 80000, 102),
-(101125, 'Saving', 150000, 103),
-(101126, 'Current', 900000, 104),
-(101127, 'Current', 1500000, 105),
-(101128, 'Saving', 60000, 105);
+int main()
+{
+    int pages[] = {
+        3, 5, 7, 2, 5, 1, 2,
+        3, 1, 5, 3, 1, 6, 2
+    };
 
-//B) Queries
-======================================================================================================================
+    int n = 14;
+    int frames[MAX], counter[MAX];
+    int f, i, j, time = 0, faults = 0;
+    int found, victim, min;
 
-//i) Display customers from Delhi
+    printf("Enter number of frames: ");
+    scanf("%d", &f);
 
-SELECT *
-FROM Customer
-WHERE cust_city = 'Delhi';
+    if (f <= 0 || f > MAX)
+    {
+        printf("Invalid number of frames!\n");
+        return 1;
+    }
 
-//ii) Find total balance of Saving accounts
+    // Initialize frames and counters
+    for (i = 0; i < f; i++)
+    {
+        frames[i] = -1;
+        counter[i] = 0;
+    }
 
-SELECT SUM(balance) AS total_balance
-FROM Account
-WHERE acc_type = 'Saving';
+    printf("\nLRU Page Replacement (Counter Method)\n");
+    printf("\nPage\tFrames\t\tStatus\n");
 
-//iii) Find account having maximum balance
+    for (i = 0; i < n; i++)
+    {
+        found = 0;
+        time++;
 
-SELECT *
-FROM Account
-WHERE balance =
-(
-    SELECT MAX(balance)
-    FROM Account
-);
+        // Check whether page is present
+        for (j = 0; j < f; j++)
+        {
+            if (frames[j] == pages[i])
+            {
+                found = 1;
+                counter[j] = time;
+                break;
+            }
+        }
 
-//iv) Increase balance of account 101123 by 10000
+        if (found)
+        {
+            printf("%d\t", pages[i]);
 
-UPDATE Account
-SET balance = balance + 10000
-WHERE acc_no = 101123;
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                    printf("- ");
+                else
+                    printf("%d ", frames[j]);
+            }
 
-//v) Add AADHAR number to Customer
+            printf("\tHit\n");
+        }
+        else
+        {
+            faults++;
 
-ALTER TABLE Customer
-ADD AADHAR VARCHAR(20);
+            // Find an empty frame
+            victim = -1;
 
-======================================================================================================================
-//C)
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                {
+                    victim = j;
+                    break;
+                }
+            }
 
-SELECT C.cust_name
-FROM Customer C
-JOIN Account A
-ON C.cust_no = A.cust_no
-WHERE A.acc_type = 'Current'
-AND A.balance > 1000000;
+            // If memory is full, find LRU page
+            if (victim == -1)
+            {
+                min = counter[0];
+                victim = 0;
 
-======================================================================================================================
+                for (j = 1; j < f; j++)
+                {
+                    if (counter[j] < min)
+                    {
+                        min = counter[j];
+                        victim = j;
+                    }
+                }
+            }
+
+            // Replace page and update counter
+            frames[victim] = pages[i];
+            counter[victim] = time;
+
+            printf("%d\t", pages[i]);
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                    printf("- ");
+                else
+                    printf("%d ", frames[j]);
+            }
+
+            printf("\tPage Fault\n");
+        }
+    }
+
+    printf("\nTotal Page Faults = %d\n", faults);
+
+    return 0;
+}

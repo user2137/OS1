@@ -1,160 +1,324 @@
-//SLIP - 6  
-  
-//Q1  
-======================================================================================================================  
-#include <stdio.h>  
-#include <stdlib.h>  
-#include <time.h>  
-  
-int main()  
-{  
-    int a[100], n, i, j, min, temp;  
-  
-    printf("Enter number of elements: ");  
-    scanf("%d", &n);  
-  
-    srand(time(0));  
-  
-    printf("Random array:\n");  
-  
-    for(i = 0; i < n; i++)  
-    {  
-        a[i] = rand() % 100;  
-        printf("%d ", a[i]);  
-    }  
-  
-    for(i = 0; i < n - 1; i++)  
-    {  
-        min = i;  
-  
-        for(j = i + 1; j < n; j++)  
-        {  
-            if(a[j] < a[min])  
-            {  
-                min = j;  
-            }  
-        }  
-  
-        temp = a[i];  
-        a[i] = a[min];  
-        a[min] = temp;  
-    }  
-  
-    printf("\n\nSorted array:\n");  
-  
-    for(i = 0; i < n; i++)  
-    {  
-        printf("%d ", a[i]);  
-    }  
-  
-    return 0;  
-}  
-======================================================================================================================  
-//DBMS  
-======================================================================================================================  
-  
-CREATE DATABASE student_teacher_db;  
-  
-CREATE TABLE Student  
-(  
-    rno INT PRIMARY KEY,  
-    name VARCHAR(50),  
-    city VARCHAR(50)  
-);  
-  
-CREATE TABLE Teacher  
-(  
-    tno INT PRIMARY KEY,  
-    tname VARCHAR(50),  
-    phone_no VARCHAR(15),  
-    salary DECIMAL(10,2)  
-);  
-  
-CREATE TABLE Student_Teacher  
-(  
-    rno INT,  
-    tno INT,  
-    subject VARCHAR(50),  
-    PRIMARY KEY(rno, tno, subject),  
-    FOREIGN KEY(rno) REFERENCES Student(rno),  
-    FOREIGN KEY(tno) REFERENCES Teacher(tno)  
-);  
-  
-INSERT INTO Student VALUES  
-(101, 'Rahul', 'Ahilyanagar'),  
-(102, 'Sneha', 'Pune'),  
-(103, 'Amit', 'Ahilyanagar'),  
-(104, 'Priya', 'Nashik'),  
-(105, 'Rohan', 'Mumbai');  
-  
-INSERT INTO Teacher VALUES  
-(1, 'Prof. Patil', '9822131001', 55000),  
-(2, 'Prof. Sharma', '9822131002', 45000),  
-(3, 'Prof. Joshi', '9822131003', 60000),  
-(4, 'Prof. Pawar', '9822131004', 48000),  
-(5, 'Prof. Kulkarni', '9822131005', 70000);  
-  
-INSERT INTO Student_Teacher VALUES  
-(101, 1, 'DBMS'),  
-(101, 2, 'Maths'),  
-(102, 1, 'DBMS'),  
-(102, 3, 'Data Structure'),  
-(103, 1, 'Maths'),  
-(103, 4, 'Java'),  
-(104, 3, 'DBMS'),  
-(105, 5, 'Data Structure');  
-  
-//B) Queries  
-======================================================================================================================  
-  
-//i) List names of students from Ahilyanagar  
-  
-SELECT name  
-FROM Student  
-WHERE city = 'Ahilyanagar';  
-  
-//ii) Count teachers whose salary is between 40000 and 60000  
-  
-SELECT COUNT(*) AS teacher_count  
-FROM Teacher  
-WHERE salary BETWEEN 40000 AND 60000;  
-  
-//iii) Change phone number of Prof. Patil  
-  
-UPDATE Teacher  
-SET phone_no = '9822131226'  
-WHERE tname = 'Prof. Patil';  
-  
-//iv) Display teachers in sorted order of name  
-  
-SELECT *  
-FROM Teacher  
-ORDER BY tname;  
-  
-//v) List teachers having salary less than 50000  
-  
-SELECT tname  
-FROM Teacher  
-WHERE salary < 50000;  
-======================================================================================================================  
-//C)  
-  
-SELECT tname  
-FROM Teacher T  
-WHERE NOT EXISTS  
-(  
-    SELECT subject  
-    FROM Student_Teacher ST1  
-    WHERE ST1.tno =  
-    (  
-        SELECT tno  
-        FROM Teacher  
-        WHERE tname = 'Prof. Patil'  
-    )  
-    AND ST1.subject IN  
-    (  
-        SELECT subject  
-        FROM Student_Teacher ST2  
-        WHERE ST2.tno = T.tno  
-    )  
-);  
+/**Q.1. Write a program to simulate Sequential file allocation method. Assume disk with 
+n number of blocks. Give value of n as input. Randomly mark some block as  
+allocated and accordingly maintain the list of free blocks Write menu driver  
+program with menu options as mentioned below and implement each option. 
+ Show Bit Vector 
+ Create New File 
+ Show Directory 
+ Exit           */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+#define MAX_FILES 50
+
+struct File
+{
+    char name[30];
+    int start;
+    int length;
+};
+
+int main()
+{
+    int n;
+    int bitVector[100];
+    struct File directory[MAX_FILES];
+
+    int fileCount = 0;
+    int choice;
+    int i, j;
+
+    srand(time(NULL));
+
+    printf("Enter number of disk blocks: ");
+    scanf("%d", &n);
+
+    for (i = 0; i < n; i++)
+    {
+        bitVector[i] = 0;
+    }
+
+    for (i = 0; i < n / 4; i++)
+    {
+        int block = rand() % n;
+        bitVector[block] = 1;
+    }
+
+    do
+    {
+        printf("\n\n===== SEQUENTIAL FILE ALLOCATION =====");
+        printf("\n1. Show Bit Vector");
+        printf("\n2. Create New File");
+        printf("\n3. Show Directory");
+        printf("\n4. Exit");
+
+        printf("\n\nEnter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice)
+        {
+            case 1:
+
+                printf("\nBit Vector:\n");
+
+                for (i = 0; i < n; i++)
+                {
+                    printf("%d ", bitVector[i]);
+
+                    if ((i + 1) % 20 == 0)
+                        printf("\n");
+                }
+
+                printf("\n");
+
+                printf("\n0 = Free Block");
+                printf("\n1 = Allocated Block\n");
+
+                break;
+
+            case 2:
+            {
+                char fileName[30];
+                int blocks;
+                int start = -1;
+                int count = 0;
+                int found = 0;
+
+                if (fileCount >= MAX_FILES)
+                {
+                    printf("\nDirectory is full!");
+                    break;
+                }
+
+                printf("\nEnter file name: ");
+                scanf("%s", fileName);
+
+                printf("Enter number of blocks required: ");
+                scanf("%d", &blocks);
+
+                for (i = 0; i <= n - blocks; i++)
+                {
+                    count = 0;
+
+                    for (j = i; j < i + blocks; j++)
+                    {
+                        if (bitVector[j] == 0)
+                            count++;
+                        else
+                            break;
+                    }
+
+                    if (count == blocks)
+                    {
+                        start = i;
+                        found = 1;
+                        break;
+                    }
+                }
+
+                if (found == 1)
+                {
+                    for (i = start; i < start + blocks; i++)
+                    {
+                        bitVector[i] = 1;
+                    }
+
+                    strcpy(directory[fileCount].name, fileName);
+                    directory[fileCount].start = start;
+                    directory[fileCount].length = blocks;
+
+                    fileCount++;
+
+                    printf("\nFile created successfully!");
+                    printf("\nStarting Block = %d", start);
+                    printf("\nLength = %d blocks", blocks);
+
+                    printf("\nAllocated Blocks: ");
+
+                    for (i = start; i < start + blocks; i++)
+                    {
+                        printf("%d ", i);
+                    }
+
+                    printf("\n");
+                }
+                else
+                {
+                    printf("\nFile cannot be created.");
+                    printf("\nRequired contiguous blocks are not available.");
+                }
+
+                break;
+            }
+
+            case 3:
+
+                if (fileCount == 0)
+                {
+                    printf("\nDirectory is empty.");
+                }
+                else
+                {
+                    printf("\n\n===== DIRECTORY =====\n");
+
+                    printf("File Name\tStart\tLength\n");
+
+                    for (i = 0; i < fileCount; i++)
+                    {
+                        printf("%s\t\t%d\t%d\n",
+                               directory[i].name,
+                               directory[i].start,
+                               directory[i].length);
+                    }
+                }
+
+                break;
+
+            case 4:
+
+                printf("\nProgram terminated.");
+                break;
+
+            default:
+
+                printf("\nInvalid choice!");
+        }
+
+    } while (choice != 4);
+
+    return 0;
+}
+
+
+/**Q.2 Write a simulation program for disk scheduling using C-SCAN algorithm. 
+Accept total number of disk blocks, disk request string, and current head position 
+from the user. Display the list of requests in the order in which it is served. 
+also display  the total number of head movements (Assume disk size=200) 
+15, 45, 75, 105, 135, 165, 195, 80 
+Starting Head Position: 100 
+Direction: Righ */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    int request[100];
+    int n, diskSize;
+    int head;
+    int direction;
+
+    int i, j, temp;
+    int totalMovement = 0;
+
+    printf("Enter total number of disk blocks: ");
+    scanf("%d", &diskSize);
+
+    printf("Enter number of disk requests: ");
+    scanf("%d", &n);
+
+    printf("Enter disk request string:\n");
+
+    for (i = 0; i < n; i++)
+    {
+        scanf("%d", &request[i]);
+    }
+
+    printf("Enter current head position: ");
+    scanf("%d", &head);
+
+    printf("Enter direction (0 = Left, 1 = Right): ");
+    scanf("%d", &direction);
+
+    for (i = 0; i < n - 1; i++)
+    {
+        for (j = i + 1; j < n; j++)
+        {
+            if (request[i] > request[j])
+            {
+                temp = request[i];
+                request[i] = request[j];
+                request[j] = temp;
+            }
+        }
+    }
+
+    printf("\nC-SCAN Seek Sequence: %d", head);
+
+    if (direction == 1)
+    {
+        for (i = 0; i < n; i++)
+        {
+            if (request[i] >= head)
+            {
+                totalMovement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+
+        totalMovement += (diskSize - 1) - head;
+        head = diskSize - 1;
+
+        printf(" -> %d", head);
+
+        totalMovement += diskSize - 1;
+        head = 0;
+
+        printf(" -> %d", head);
+
+        for (i = 0; i < n; i++)
+        {
+            if (request[i] < head)
+            {
+                totalMovement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+    }
+    else
+    {
+        for (i = n - 1; i >= 0; i--)
+        {
+            if (request[i] <= head)
+            {
+                totalMovement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+
+        totalMovement += head;
+        head = 0;
+
+        printf(" -> %d", head);
+
+        totalMovement += diskSize - 1;
+        head = diskSize - 1;
+
+        printf(" -> %d", head);
+
+        for (i = n - 1; i >= 0; i--)
+        {
+            if (request[i] > head)
+            {
+                totalMovement += abs(head - request[i]);
+                head = request[i];
+
+                printf(" -> %d", head);
+            }
+        }
+    }
+
+    printf("\n\nTotal Head Movement = %d cylinders\n",
+           totalMovement);
+
+    return 0;
+}

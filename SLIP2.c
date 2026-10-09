@@ -1,184 +1,258 @@
-//SLIP - 2
+/**Q.1 Write a program to simulate Linked file allocation method. Assume disk with ‘n’ number of blocks.  
+Give value of ‘n’ as input. Randomly mark some block as allocated and accordingly maintain the list of  
+free blocks Write menu driver program with menu options as mentioned below and implement each  
+option.  
+ Show Bit Vector  
+ Create New File  
+ Show Directory  
+ Exit           */ 
+ 
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <string.h> 
+ 
+#define MAX 100 
+#define MAX_FILES 20 
+ 
+struct File 
+{ 
+    char name[30]; 
+    int start; 
+    int blocks; 
+    int blockList[MAX]; 
+}; 
+ 
+struct File directory[MAX_FILES]; 
+ 
+int bitVector[MAX]; 
+int n; 
+int fileCount = 0; 
+ 
+void showBitVector() 
+{ 
+    printf("\n--- Bit Vector ---\n"); 
+ 
+    for (int i = 0; i < n; i++) 
+    { 
+        printf("%d ", bitVector[i]); 
+    } 
+ 
+    printf("\n"); 
+} 
+ 
+void createFile() 
+{ 
+    char filename[30]; 
+    int blocks; 
+ 
+    if (fileCount >= MAX_FILES) 
+    { 
+        printf("\nDirectory is full!\n"); 
+        return; 
+    } 
+ 
+    printf("\nEnter file name: "); 
+    scanf("%s", filename); 
+ 
+    printf("Enter number of blocks required: "); 
+    scanf("%d", &blocks); 
+ 
+    int freeBlocks = 0; 
+ 
+    for (int i = 0; i < n; i++) 
+    { 
+        if (bitVector[i] == 0) 
+            freeBlocks++; 
+    } 
+ 
+    if (freeBlocks < blocks) 
+    { 
+        printf("\nNot enough free blocks available!\n"); 
+        return; 
+    } 
+ 
+    int count = 0; 
+ 
+    strcpy(directory[fileCount].name, filename); 
+    directory[fileCount].blocks = blocks; 
+ 
+    for (int i = 0; i < n && count < blocks; i++) 
+    { 
+        if (bitVector[i] == 0) 
+        { 
+            bitVector[i] = 1; 
+ 
+            directory[fileCount].blockList[count] = i; 
+            count++; 
+        } 
+    } 
+ 
+    directory[fileCount].start = 
+        directory[fileCount].blockList[0]; 
+ 
+    fileCount++; 
+ 
+    printf("\nFile created successfully!\n"); 
+ 
+    printf("File Name: %s\n", filename); 
+    printf("Linked Blocks: "); 
+ 
+    for (int i = 0; i < blocks; i++) 
+    { 
+        printf("%d", directory[fileCount - 1].blockList[i]); 
+ 
+        if (i < blocks - 1) 
+            printf(" -> "); 
+    } 
+ 
+    printf("\n"); 
+} 
+ 
+void showDirectory() 
+{ 
+    if (fileCount == 0) 
+    { 
+        printf("\nDirectory is empty!\n"); 
+        return; 
+    } 
+ 
+    printf("\n--- Directory ---\n"); 
+ 
+    printf("%-15s %-10s %-10s\n", 
+           "File Name", "Start", "Blocks"); 
+ 
+    for (int i = 0; i < fileCount; i++) 
+    { 
+        printf("%-15s %-10d %-10d\n", 
+               directory[i].name, 
+               directory[i].start, 
+               directory[i].blocks); 
+ 
+        printf("Linked List: "); 
+ 
+        for (int j = 0; j < directory[i].blocks; j++) 
+        { 
+            printf("%d", directory[i].blockList[j]); 
+ 
+            if (j < directory[i].blocks - 1) 
+                printf(" -> "); 
+        } 
+ 
+        printf("\n"); 
+    } 
+} 
+ 
+int main() 
+{ 
+    int choice; 
+ 
+    printf("Enter number of blocks: "); 
+    scanf("%d", &n); 
+ 
+    if (n <= 0 || n > MAX) 
+    { 
+        printf("Invalid number of blocks!\n"); 
+        return 0; 
+    } 
+ 
+    for (int i = 0; i < n; i++) 
+    { 
+        bitVector[i] = 0; 
+    } 
+ 
+    while (1) 
+    { 
+        printf("\n=================================\n"); 
+        printf(" Linked File Allocation\n"); 
+        printf("=================================\n"); 
+        printf("1. Show Bit Vector\n"); 
+        printf("2. Create New File\n"); 
+        printf("3. Show Directory\n"); 
+        printf("4. Exit\n"); 
+ 
+        printf("Enter your choice: "); 
+        scanf("%d", &choice); 
+ 
+        switch (choice) 
+        { 
+            case 1: 
+                showBitVector(); 
+                break; 
+ 
+            case 2: 
+                createFile(); 
+                break; 
+ 
+            case 3: 
+                showDirectory(); 
+                break; 
+ 
+            case 4: 
+                printf("\nProgram terminated.\n"); 
+                exit(0); 
+ 
+            default: 
+                printf("\nInvalid choice!\n"); 
+        } 
+    } 
+ 
+    return 0; 
+} 
 
-//Q1
-======================================================================================================================
-#include <stdio.h>
 
-#define MAX 100
-
-int queue[MAX];
-int front, rear;
-
-void Initialize()
-{
-    front = -1;
-    rear = -1;
+/**Q.2     Write a simulation program for disk scheduling using FCFS algorithm.   
+Accept total number of disk blocks, disk request string, and current   
+head position from the user. Display the list of requests in the   
+order in which it is served. Also display the total number of head moments.  
+55, 58, 39, 18, 90, 160, 150, 38, 184  
+Start Head Position: 50   */ 
+ 
+#include <stdio.h> 
+#include <stdlib.h> 
+ 
+int main() 
+{ 
+    int n; 
+    int request[100]; 
+    int head; 
+    int totalMovement = 0; 
+ 
+    printf("Enter total number of disk requests: "); 
+    scanf("%d", &n); 
+ 
+    printf("Enter disk request string:\n"); 
+ 
+    for (int i = 0; i < n; i++) 
+    { 
+        scanf("%d", &request[i]); 
+    } 
+ 
+    printf("Enter current head position: "); 
+    scanf("%d", &head); 
+ 
+    printf("\n--- FCFS Disk Scheduling ---\n"); 
+ 
+    printf("Seek Sequence: %d", head); 
+ 
+    for (int i = 0; i < n; i++) 
+    { 
+        int movement = abs(request[i] - head); 
+ 
+        printf(" -> %d", request[i]); 
+ 
+        printf("\nHead movement from %d to %d = %d", 
+               head, request[i], movement); 
+ 
+        totalMovement += movement; 
+ 
+        head = request[i]; 
+    } 
+ 
+    printf("\n\nTotal Head Movement = %d cylinders\n", 
+           totalMovement); 
+ 
+    printf("Average Head Movement = %.2f cylinders\n", 
+           (float)totalMovement / n); 
+ 
+    return 0; 
 }
-
-int IsEmpty()
-{
-    if(front == -1 || front > rear)
-        return 1;
-    else
-        return 0;
-}
-
-void Insert(int x)
-{
-    if(rear == MAX - 1)
-    {
-        printf("Queue is Full\n");
-    }
-    else
-    {
-        if(front == -1)
-            front = 0;
-
-        rear++;
-        queue[rear] = x;
-    }
-}
-
-void Delete()
-{
-    if(IsEmpty())
-    {
-        printf("Queue is Empty\n");
-    }
-    else
-    {
-        printf("Deleted element = %d\n", queue[front]);
-        front++;
-
-        if(front > rear)
-        {
-            front = -1;
-            rear = -1;
-        }
-    }
-}
-
-void Display()
-{
-    int i;
-
-    if(IsEmpty())
-    {
-        printf("Queue is Empty\n");
-    }
-    else
-    {
-        printf("Queue elements are:\n");
-
-        for(i = front; i <= rear; i++)
-        {
-            printf("%d ", queue[i]);
-        }
-
-        printf("\n");
-    }
-}
-
-int main()
-{
-    int n, i, x;
-
-    Initialize();
-
-    printf("Enter number of elements: ");
-    scanf("%d", &n);
-
-    printf("Enter elements:\n");
-
-    for(i = 0; i < n; i++)
-    {
-        scanf("%d", &x);
-        Insert(x);
-    }
-
-    Display();
-
-    Delete();
-
-    Display();
-
-    return 0;
-}
-======================================================================================================================
-DBMS
-======================================================================================================================
-CREATE DATABASE company_db;
-
-CREATE TABLE Department
-(
-    dno INT PRIMARY KEY,
-    dname VARCHAR(50),
-    location VARCHAR(50)
-);
-CREATE TABLE Employee
-(
-    eno INT PRIMARY KEY,
-    ename VARCHAR(50),
-    designation VARCHAR(50),
-    salary DECIMAL(10,2),
-    dno INT,
-    FOREIGN KEY(dno) REFERENCES Department(dno)
-);
-
-INSERT INTO Department VALUES
-(1, 'HR', 'Pune'),
-(2, 'IT', 'Nashik'),
-(3, 'Finance', 'Delhi'),
-(4, 'Sales', 'Nashik'),
-(5, 'Admin', 'Mumbai');
-
-INSERT INTO Employee VALUES
-(101, 'Rohit', 'Manager', 60000, 1),
-(102, 'Sneha', 'Developer', 50000, 2),
-(103, 'Pooja', 'HR Executive', 45000, 1),
-(104, 'Amit', 'Accountant', 40000, 3),
-(105, 'Neha', 'Developer', 55000, 2),
-(106, 'Kiran', 'Sales Executive', 35000, 4),
-(107, 'Priya', 'Manager', 65000, 5);
-
-//B) Queries
-
-
-//i) Give a 5% raise to all employees
-
-UPDATE Employee
-SET salary = salary * 1.05;
-
-//ii) Display average salary
-SELECT AVG(salary) AS average_salary
-FROM Employee;
-
-//iii) Departments located in Nashik
-SELECT *
-FROM Department
-WHERE location = 'Nashik';
-
-//iv) Employees whose name ends with a
-SELECT *
-FROM Employee
-WHERE ename LIKE '%a';
-
-//v) Display location of HR department
-SELECT location
-FROM Department
-WHERE dname = 'HR';
-
-//C) Employees who do NOT work in departments located at Delhi
-SELECT E.*
-FROM Employee E
-JOIN Department D
-ON E.dno = D.dno
-WHERE D.location <> 'Delhi';
-======================================================================================================================
-//C) Guest having highest-charged room
-
-SELECT G.Gname
-FROM Guest G
-JOIN Room R
-ON G.roomno = R.roomno
-WHERE R.charges = (SELECT MAX(charges) FROM Room);

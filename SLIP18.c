@@ -1,163 +1,224 @@
-//SLIP - 18
+/**Q.1. Write the program to simulate Preemptive Shortest Job First (SJF) scheduling.  
+The arrival time and first CPU burst for different n number of processes should  
+be input to the algorithm. The next CPU burst should be generated randomly.  
+The output should give Gantt chart, turnaround time and waiting time for each  
+process.  Also find the average waiting time and turnaround time */
 
-//Q1
-======================================================================================================================
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
+#define MAX 20
+
 int main()
 {
-    int a[100], n, i, j, temp;
+    int n, i, current_time = 0, completed = 0;
+    int at[MAX], bt[MAX], rt[MAX];
+    int ct[MAX], tat[MAX], wt[MAX];
+    int gantt[10000], gantt_time[10000];
+    int g = 0, selected, min;
 
-    printf("Enter number of elements: ");
+    float avg_wt = 0, avg_tat = 0;
+
+    srand(time(NULL));
+
+    printf("Enter number of processes: ");
     scanf("%d", &n);
 
-    srand(time(0));
-
-    printf("Random array:\n");
-
-    for(i = 0; i < n; i++)
+    if (n <= 0 || n > MAX)
     {
-        a[i] = rand() % 100;
-        printf("%d ", a[i]);
+        printf("Invalid number of processes!\n");
+        return 1;
     }
 
-    for(i = 0; i < n - 1; i++)
+    // Input arrival time and generate burst time
+    for (i = 0; i < n; i++)
     {
-        for(j = 0; j < n - i - 1; j++)
+        printf("Enter arrival time for P%d: ", i + 1);
+        scanf("%d", &at[i]);
+
+        if (at[i] < 0 || at[i] >= 10000)
         {
-            if(a[j] > a[j + 1])
+            printf("Invalid arrival time!\n");
+            return 1;
+        }
+
+        bt[i] = rand() % 10 + 1;
+        rt[i] = bt[i];
+
+        printf("Burst time of P%d = %d\n", i + 1, bt[i]);
+    }
+
+    // Preemptive SJF Scheduling
+    while (completed < n)
+    {
+        selected = -1;
+        min = 999999;
+
+        // Find process with shortest remaining time
+        for (i = 0; i < n; i++)
+        {
+            if (at[i] <= current_time && rt[i] > 0)
             {
-                temp = a[j];
-                a[j] = a[j + 1];
-                a[j + 1] = temp;
+                if (rt[i] < min)
+                {
+                    min = rt[i];
+                    selected = i;
+                }
             }
+        }
+
+        // CPU Idle
+        if (selected == -1)
+        {
+            if (g == 0 || gantt[g - 1] != -1)
+            {
+                gantt[g] = -1;
+                gantt_time[g] = current_time;
+                g++;
+            }
+
+            current_time++;
+            continue;
+        }
+
+        // Record process change
+        if (g == 0 || gantt[g - 1] != selected)
+        {
+            gantt[g] = selected;
+            gantt_time[g] = current_time;
+            g++;
+        }
+
+        // Execute process for one time unit
+        rt[selected]--;
+        current_time++;
+
+        // Check process completion
+        if (rt[selected] == 0)
+        {
+            ct[selected] = current_time;
+            completed++;
         }
     }
 
-    printf("\n\nSorted array:\n");
+    gantt_time[g] = current_time;
 
-    for(i = 0; i < n; i++)
+    // Calculate TAT and WT
+    for (i = 0; i < n; i++)
     {
-        printf("%d ", a[i]);
+        tat[i] = ct[i] - at[i];
+        wt[i] = tat[i] - bt[i];
+
+        avg_wt += wt[i];
+        avg_tat += tat[i];
+    }
+
+    // Display Gantt Chart
+    printf("\nGantt Chart:\n");
+
+    for (i = 0; i < g; i++)
+    {
+        if (gantt[i] == -1)
+            printf("| Idle ");
+        else
+            printf("| P%d ", gantt[i] + 1);
+    }
+
+    printf("|\n");
+
+    for (i = 0; i <= g; i++)
+        printf("%-6d", gantt_time[i]);
+
+    // Display process table
+    printf("\n\nProcess\tAT\tBT\tCT\tTAT\tWT\n");
+
+    for (i = 0; i < n; i++)
+    {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               i + 1, at[i], bt[i],
+               ct[i], tat[i], wt[i]);
+    }
+
+    printf("\nAverage Waiting Time = %.2f",
+           avg_wt / n);
+
+    printf("\nAverage Turnaround Time = %.2f\n",
+           avg_tat / n);
+
+    return 0;
+}
+
+
+
+
+/** Q.3 Write a C program to illustrate the concept of orphan process. Parent process  
+creates a child and terminates before child has finished its task. So child process  
+becomes orphan process. (Use fork(), sleep(), getpid(), getppid()    */
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+
+int main()
+{
+    pid_t pid;
+
+    pid = fork();
+
+    if (pid < 0)
+    {
+        printf("Fork failed!\n");
+        return 1;
+    }
+
+    else if (pid == 0)
+    {
+        // Child Process
+        printf("\nChild Process Started\n");
+
+        printf("Child PID  : %d\n", getpid());
+        printf("Parent PID : %d\n", getppid());
+
+        fflush(stdout);
+
+        printf("\nChild is sleeping for 5 seconds...\n");
+        fflush(stdout);
+
+        sleep(5);
+
+        printf("\nChild Process After Parent Termination\n");
+
+        printf("Child PID      : %d\n", getpid());
+        printf("New Parent PID : %d\n", getppid());
+
+        printf("\nChild process completed.\n");
+    }
+
+    else
+    {
+        // Parent Process
+        printf("\nParent Process\n");
+
+        printf("Parent PID : %d\n", getpid());
+        printf("Child PID  : %d\n", pid);
+
+        printf("\nParent is sleeping for 1 second...\n");
+
+        fflush(stdout);
+
+        sleep(1);
+
+        printf("\nParent process terminating.\n");
+        fflush(stdout);
+
+        exit(0);
     }
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
-
-CREATE DATABASE student_teacher_db18;
-
-CREATE TABLE Student
-(
-    sno INT PRIMARY KEY,
-    sname VARCHAR(50),
-    class VARCHAR(10),
-    city VARCHAR(50)
-);
-
-CREATE TABLE Teacher
-(
-    tno INT PRIMARY KEY,
-    tname VARCHAR(50),
-    phone_no VARCHAR(15),
-    salary DECIMAL(10,2)
-);
-
-CREATE TABLE Subject
-(
-    subno INT PRIMARY KEY,
-    subname VARCHAR(50)
-);
-
-CREATE TABLE Student_Teacher
-(
-    sno INT,
-    tno INT,
-    subno INT,
-    PRIMARY KEY(sno, tno, subno),
-    FOREIGN KEY(sno) REFERENCES Student(sno),
-    FOREIGN KEY(tno) REFERENCES Teacher(tno),
-    FOREIGN KEY(subno) REFERENCES Subject(subno)
-);
-
-INSERT INTO Student VALUES
-(1, 'Rahul', 'FY', 'Pune'),
-(2, 'Sneha', 'SY', 'Sangamner'),
-(3, 'Amit', 'SY', 'Nashik'),
-(4, 'Pooja', 'TY', 'Pune'),
-(5, 'Rohan', 'TY', 'Sangamner'),
-(6, 'Neha', 'FY', 'Mumbai');
-
-INSERT INTO Teacher VALUES
-(101, 'Dr.Wani', '9876543210', 50000),
-(102, 'Dr.Mulay', '9876543211', 60000),
-(103, 'Dr.Patil', '9876543212', 55000),
-(104, 'Dr.Sharma', '9876543213', 45000),
-(105, 'Dr.Joshi', '9876543214', 70000);
-
-INSERT INTO Subject VALUES
-(201, 'Data Structure'),
-(202, 'DBMS'),
-(203, 'IKS'),
-(204, 'Electronics');
-
-INSERT INTO Student_Teacher VALUES
-(1, 101, 201),
-(2, 102, 202),
-(3, 101, 203),
-(4, 103, 204),
-(5, 101, 201),
-(6, 104, 202);
-
-//B) Queries
-======================================================================================================================
-
-//i) Display students from Sangamner
-
-SELECT *
-FROM Student
-WHERE city = 'Sangamner';
-
-//ii) Find maximum teacher salary
-
-SELECT MAX(salary) AS maximum_salary
-FROM Teacher;
-
-//iii) Change Dr. Mulay phone number
-
-UPDATE Teacher
-SET phone_no = '9834233235'
-WHERE tname = 'Dr.Mulay';
-
-//iv) Display teachers sorted by name
-
-SELECT *
-FROM Teacher
-ORDER BY tname;
-
-//v) Count students who took IKS
-
-SELECT COUNT(DISTINCT sno) AS student_count
-FROM Student_Teacher ST
-JOIN Subject S
-ON ST.subno = S.subno
-WHERE S.subname = 'IKS';
-
-======================================================================================================================
-//C)
-
-SELECT DISTINCT STU.*
-FROM Student STU
-JOIN Student_Teacher ST
-ON STU.sno = ST.sno
-JOIN Teacher T
-ON ST.tno = T.tno
-WHERE T.tname = 'Dr.Wani';
-
-======================================================================================================================

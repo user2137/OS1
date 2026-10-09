@@ -1,278 +1,276 @@
-//SLIP - 16
+/**Q.1 Write the simulation program to implement demand paging and show the page  
+scheduling and total number of page faults according to the LRU  
+(using counter method) page replacement algorithm. Assume the memory of 
+n frames. 
+Reference String : 3,5,7,2,5,1,2,3,1,3,5,3,1,6,2      */
 
-//Q1
-======================================================================================================================
 
 #include <stdio.h>
-#include <stdlib.h>
 
-struct Node
-{
-    int data;
-    struct Node *prev;
-    struct Node *next;
-};
-
-struct Node *createNode(int data)
-{
-    struct Node *newNode;
-
-    newNode = (struct Node *)malloc(sizeof(struct Node));
-
-    newNode->data = data;
-    newNode->prev = NULL;
-    newNode->next = NULL;
-
-    return newNode;
-}
-
-void display(struct Node *head)
-{
-    struct Node *temp = head;
-
-    while(temp != NULL)
-    {
-        printf("%d ", temp->data);
-        temp = temp->next;
-    }
-
-    printf("\n");
-}
-
-struct Node *reverseList(struct Node *head)
-{
-    struct Node *temp = NULL;
-    struct Node *current = head;
-
-    while(current != NULL)
-    {
-        temp = current->prev;
-        current->prev = current->next;
-        current->next = temp;
-
-        current = current->prev;
-    }
-
-    if(temp != NULL)
-    {
-        head = temp->prev;
-    }
-
-    return head;
-}
-
-struct Node *insertEnd(struct Node *head, int data)
-{
-    struct Node *newNode = createNode(data);
-    struct Node *temp = head;
-
-    if(head == NULL)
-    {
-        return newNode;
-    }
-
-    while(temp->next != NULL)
-    {
-        temp = temp->next;
-    }
-
-    temp->next = newNode;
-    newNode->prev = temp;
-
-    return head;
-}
-
-struct Node *mergeLists(struct Node *head1, struct Node *head2)
-{
-    struct Node *temp = head1;
-
-    if(head1 == NULL)
-    {
-        return head2;
-    }
-
-    while(temp->next != NULL)
-    {
-        temp = temp->next;
-    }
-
-    temp->next = head2;
-
-    if(head2 != NULL)
-    {
-        head2->prev = temp;
-    }
-
-    return head1;
-}
+#define MAX 100
 
 int main()
 {
-    struct Node *head1 = NULL;
-    struct Node *head2 = NULL;
-    int n, i, x;
+    int pages[] = {3, 5, 7, 2, 5, 1, 2,
+                   3, 1, 5, 3, 1, 6, 2};
 
-    printf("Enter number of elements in first list: ");
-    scanf("%d", &n);
+    int n = 14, frames[MAX], counter[MAX];
+    int f, i, j, time = 0, faults = 0;
+    int found, victim, min;
 
-    printf("Enter elements:\n");
+    printf("Enter number of frames: ");
+    scanf("%d", &f);
 
-    for(i = 0; i < n; i++)
+    if (f <= 0 || f > MAX)
     {
-        scanf("%d", &x);
-        head1 = insertEnd(head1, x);
+        printf("Invalid number of frames!\n");
+        return 1;
     }
 
-    printf("First linked list:\n");
-    display(head1);
-
-    printf("\nReversed linked list:\n");
-    head1 = reverseList(head1);
-    display(head1);
-
-    printf("\nEnter element to concatenate with first list: ");
-    scanf("%d", &x);
-
-    head1 = insertEnd(head1, x);
-
-    printf("List after concatenation:\n");
-    display(head1);
-
-    printf("\nEnter number of elements in second list: ");
-    scanf("%d", &n);
-
-    printf("Enter elements:\n");
-
-    for(i = 0; i < n; i++)
+    // Initialize frames and counters
+    for (i = 0; i < f; i++)
     {
-        scanf("%d", &x);
-        head2 = insertEnd(head2, x);
+        frames[i] = -1;
+        counter[i] = 0;
     }
 
-    printf("Second linked list:\n");
-    display(head2);
+    printf("\nLRU Page Replacement (Counter Method)\n");
+    printf("\nPage\tFrames\t\tStatus\n");
 
-    head1 = mergeLists(head1, head2);
+    for (i = 0; i < n; i++)
+    {
+        found = 0;
+        time++;
 
-    printf("\nMerged linked list:\n");
-    display(head1);
+        // Check whether page is present
+        for (j = 0; j < f; j++)
+        {
+            if (frames[j] == pages[i])
+            {
+                found = 1;
+                counter[j] = time;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            printf("%d\t", pages[i]);
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                    printf("- ");
+                else
+                    printf("%d ", frames[j]);
+            }
+
+            printf("\tHit\n");
+        }
+        else
+        {
+            faults++;
+
+            // Find an empty frame
+            victim = -1;
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                {
+                    victim = j;
+                    break;
+                }
+            }
+
+            // If memory is full, find least recently used page
+            if (victim == -1)
+            {
+                min = counter[0];
+                victim = 0;
+
+                for (j = 1; j < f; j++)
+                {
+                    if (counter[j] < min)
+                    {
+                        min = counter[j];
+                        victim = j;
+                    }
+                }
+            }
+
+            // Replace page and update counter
+            frames[victim] = pages[i];
+            counter[victim] = time;
+
+            printf("%d\t", pages[i]);
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                    printf("- ");
+                else
+                    printf("%d ", frames[j]);
+            }
+
+            printf("\tPage Fault\n");
+        }
+    }
+
+    printf("\nTotal Page Faults = %d\n", faults);
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
+/**Q.2 Write a C program that behaves like a shell which displays the command    
+[15 Marks] 
+prompt ‘$’. It accepts the command, tokenize the command line and execute it  
+by creating the child process. Also implement the additional command ‘count’ as 
+a $ count c filename: It will display the number of characters in   
+given  file 
+b $ count w filename: It will display the number of words in given   
+file  
+c $ count l filename: It will display the number of lines in given  file   */
 
-CREATE DATABASE student_teacher_db;
 
-CREATE TABLE Student
-(
-    sno INT PRIMARY KEY,
-    sname VARCHAR(50),
-    class VARCHAR(10),
-    city VARCHAR(50)
-);
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <ctype.h>
 
-CREATE TABLE Teacher
-(
-    tno INT PRIMARY KEY,
-    tname VARCHAR(50),
-    experience INT
-);
+#define MAX 100
 
-CREATE TABLE Subject
-(
-    subno INT PRIMARY KEY,
-    subname VARCHAR(50)
-);
+// Function to count characters, words and lines
+void count_file(char option, char filename[])
+{
+    FILE *fp;
+    int ch, characters = 0, words = 0, lines = 0;
+    int in_word = 0;
 
-CREATE TABLE Student_Teacher
-(
-    sno INT,
-    tno INT,
-    subno INT,
-    PRIMARY KEY(sno, tno, subno),
-    FOREIGN KEY(sno) REFERENCES Student(sno),
-    FOREIGN KEY(tno) REFERENCES Teacher(tno),
-    FOREIGN KEY(subno) REFERENCES Subject(subno)
-);
+    fp = fopen(filename, "r");
 
-INSERT INTO Student VALUES
-(1, 'Rahul', 'FY', 'Pune'),
-(2, 'Sneha', 'SY', 'Nashik'),
-(3, 'Amit', 'SY', 'Mumbai'),
-(4, 'Pooja', 'TY', 'Pune'),
-(5, 'Rohan', 'TY', 'Nashik'),
-(6, 'Neha', 'FY', 'Nashik');
+    if (fp == NULL)
+    {
+        perror("File opening failed");
+        return;
+    }
 
-INSERT INTO Teacher VALUES
-(101, 'Pawar', 8),
-(102, 'Sharma', 12),
-(103, 'Patil', 6),
-(104, 'Joshi', 4),
-(105, 'Kulkarni', 10);
+    while ((ch = fgetc(fp)) != EOF)
+    {
+        characters++;
 
-INSERT INTO Subject VALUES
-(201, 'Data Structure'),
-(202, 'DBMS'),
-(203, 'Operating System'),
-(204, 'Web Technology');
+        if (ch == '\n')
+            lines++;
 
-INSERT INTO Student_Teacher VALUES
-(1, 101, 201),
-(2, 102, 201),
-(2, 103, 202),
-(3, 101, 203),
-(4, 104, 204),
-(5, 102, 202),
-(6, 105, 201);
+        if (isspace((unsigned char)ch))
+        {
+            in_word = 0;
+        }
+        else if (!in_word)
+        {
+            words++;
+            in_word = 1;
+        }
+    }
 
-//B) Queries
-======================================================================================================================
+    fclose(fp);
 
-//i) Display teachers having experience greater than 5 years
+    if (option == 'c')
+        printf("Number of characters = %d\n", characters);
 
-SELECT *
-FROM Teacher
-WHERE experience > 5;
+    else if (option == 'w')
+        printf("Number of words = %d\n", words);
 
-//ii) Count students who took Data Structure
+    else if (option == 'l')
+        printf("Number of lines = %d\n", lines);
 
-SELECT COUNT(DISTINCT sno) AS student_count
-FROM Student_Teacher ST
-JOIN Subject S
-ON ST.subno = S.subno
-WHERE S.subname = 'Data Structure';
+    else
+        printf("Invalid count option!\n");
+}
 
-//iii) Display names of all SY students
+int main()
+{
+    char command[MAX];
+    char *args[20];
+    char *token;
+    pid_t pid;
+    int i;
 
-SELECT sname
-FROM Student
-WHERE class = 'SY';
+    while (1)
+    {
+        printf("\nMyShell> ");
+        fflush(stdout);
 
-//iv) Change experience of Pawar to 20 years
+        if (fgets(command, sizeof(command), stdin) == NULL)
+            break;
 
-UPDATE Teacher
-SET experience = 20
-WHERE tname = 'Pawar';
+        // Remove newline character
+        command[strcspn(command, "\n")] = '\0';
 
-//v) Display class-wise details of students
+        // Tokenize command
+        i = 0;
+        token = strtok(command, " \t");
 
-SELECT class, COUNT(*) AS student_count
-FROM Student
-GROUP BY class;
+        while (token != NULL && i < 19)
+        {
+            args[i++] = token;
+            token = strtok(NULL, " \t");
+        }
 
-======================================================================================================================
-//C)
+        args[i] = NULL;
 
-SELECT T.tname, S.subname, STU.sname
-FROM Teacher T
-JOIN Student_Teacher ST
-ON T.tno = ST.tno
-JOIN Subject S
-ON ST.subno = S.subno
-JOIN Student STU
-ON ST.sno = STU.sno;
+        if (args[0] == NULL)
+            continue;
 
-======================================================================================================================
+        // Exit command
+        if (strcmp(args[0], "exit") == 0)
+            break;
+
+        // Custom count command
+        if (strcmp(args[0], "count") == 0)
+        {
+            if (args[1] == NULL || args[2] == NULL)
+            {
+                printf("Usage: count c|w|l filename\n");
+                continue;
+            }
+
+            if (strlen(args[1]) != 1)
+            {
+                printf("Invalid count option!\n");
+                continue;
+            }
+
+            count_file(args[1][0], args[2]);
+            continue;
+        }
+
+        // Create child process
+        pid = fork();
+
+        if (pid < 0)
+        {
+            perror("Fork failed");
+        }
+        else if (pid == 0)
+        {
+            // Execute command in child
+            execvp(args[0], args);
+
+            perror("Command execution failed");
+            exit(1);
+        }
+        else
+        {
+            // Parent waits for child
+            waitpid(pid, NULL, 0);
+        }
+    }
+
+    printf("Shell terminated.\n");
+
+    return 0;
+}

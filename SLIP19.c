@@ -1,151 +1,229 @@
-//SLIP - 19
+/**Q.1 Write the program to simulate Preemptive Priority scheduling. The arrival time  
+and first CPU-burst and priority for different n number of processes should be 
+input to the algorithm. The next CPU-burst should be generated.  */
 
-//Q1
-======================================================================================================================
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-struct Employee
-{
-    char name[50];
-    int age;
-};
+#define MAX 20
 
 int main()
 {
-    struct Employee emp[100], temp;
-    int n, i, j;
+    int n, i, time = 0, completed = 0;
+    int at[MAX], bt[MAX], rt[MAX], priority[MAX];
+    int ct[MAX], tat[MAX], wt[MAX];
+    int gantt[10000], gantt_time[10000];
+    int g = 0, selected, min_priority;
 
-    printf("Enter number of employees: ");
+    float avg_wt = 0, avg_tat = 0;
+
+    srand(time(NULL));
+
+    printf("Enter number of processes: ");
     scanf("%d", &n);
 
-    for(i = 0; i < n; i++)
+    if (n <= 0 || n > MAX)
     {
-        printf("\nEnter employee name: ");
-        scanf("%s", emp[i].name);
-
-        printf("Enter age: ");
-        scanf("%d", &emp[i].age);
+        printf("Invalid number of processes!\n");
+        return 1;
     }
 
-    for(i = 0; i < n - 1; i++)
+    // Input process details
+    for (i = 0; i < n; i++)
     {
-        for(j = 0; j < n - i - 1; j++)
+        printf("\nEnter arrival time for P%d: ", i + 1);
+        scanf("%d", &at[i]);
+
+        printf("Enter priority for P%d: ", i + 1);
+        scanf("%d", &priority[i]);
+
+        if (at[i] < 0 || priority[i] < 0)
         {
-            if(emp[j].age > emp[j + 1].age)
+            printf("Invalid input!\n");
+            return 1;
+        }
+
+        // Generate random burst time
+        bt[i] = rand() % 10 + 1;
+        rt[i] = bt[i];
+
+        printf("Burst time of P%d = %d\n", i + 1, bt[i]);
+    }
+
+    // Preemptive Priority Scheduling
+    while (completed < n)
+    {
+        selected = -1;
+        min_priority = 999999;
+
+        // Find highest-priority arrived process
+        for (i = 0; i < n; i++)
+        {
+            if (at[i] <= time && rt[i] > 0)
             {
-                temp = emp[j];
-                emp[j] = emp[j + 1];
-                emp[j + 1] = temp;
+                if (priority[i] < min_priority)
+                {
+                    min_priority = priority[i];
+                    selected = i;
+                }
             }
+        }
+
+        // CPU Idle
+        if (selected == -1)
+        {
+            if (g == 0 || gantt[g - 1] != -1)
+            {
+                gantt[g] = -1;
+                gantt_time[g] = time;
+                g++;
+            }
+
+            time++;
+            continue;
+        }
+
+        // Record process change
+        if (g == 0 || gantt[g - 1] != selected)
+        {
+            gantt[g] = selected;
+            gantt_time[g] = time;
+            g++;
+        }
+
+        // Execute process for one time unit
+        rt[selected]--;
+        time++;
+
+        // Check process completion
+        if (rt[selected] == 0)
+        {
+            ct[selected] = time;
+            completed++;
         }
     }
 
-    printf("\nEmployees sorted by age:\n");
+    gantt_time[g] = time;
 
-    for(i = 0; i < n; i++)
+    // Calculate TAT and WT
+    for (i = 0; i < n; i++)
     {
-        printf("%s %d\n", emp[i].name, emp[i].age);
+        tat[i] = ct[i] - at[i];
+        wt[i] = tat[i] - bt[i];
+
+        avg_wt += wt[i];
+        avg_tat += tat[i];
     }
+
+    // Display Gantt Chart
+    printf("\nGantt Chart:\n");
+
+    for (i = 0; i < g; i++)
+    {
+        if (gantt[i] == -1)
+            printf("| Idle ");
+        else
+            printf("| P%d ", gantt[i] + 1);
+    }
+
+    printf("|\n");
+
+    for (i = 0; i <= g; i++)
+        printf("%-6d", gantt_time[i]);
+
+    // Display process table
+    printf("\n\nProcess\tAT\tBT\tPriority\tCT\tTAT\tWT\n");
+
+    for (i = 0; i < n; i++)
+    {
+        printf("P%d\t%d\t%d\t%d\t\t%d\t%d\t%d\n",
+               i + 1, at[i], bt[i], priority[i],
+               ct[i], tat[i], wt[i]);
+    }
+
+    printf("\nAverage Waiting Time = %.2f",
+           avg_wt / n);
+
+    printf("\nAverage Turnaround Time = %.2f\n",
+           avg_tat / n);
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
 
-CREATE DATABASE order_client_db;
 
-CREATE TABLE Client
-(
-    cno INT PRIMARY KEY,
-    name VARCHAR(50),
-    address VARCHAR(100)
-);
+/**Q.2   
+Write a program that demonstrates the use of nice() system call.  
+After a child process is started using fork(), assign higher priority to the  
+child using nice() system call  */
 
-CREATE TABLE Orders
-(
-    orderno INT PRIMARY KEY,
-    s_order_date DATE,
-    amount DECIMAL(12,2),
-    cno INT,
-    FOREIGN KEY(cno) REFERENCES Client(cno),
-    CHECK(amount > 0)
-);
 
-INSERT INTO Client VALUES
-(1, 'Rahul', 'Pune'),
-(2, 'Sneha', 'Mumbai'),
-(3, 'Amit', 'Nashik'),
-(4, 'Pooja', 'Mumbai'),
-(5, 'Rohan', 'Delhi');
+#define _DEFAULT_SOURCE
 
-INSERT INTO Orders VALUES
-(101, '2019-04-10', 25000, 1),
-(102, '2019-10-15', 45000, 1),
-(103, '2019-10-20', 30000, 2),
-(104, '2019-05-12', 60000, 3),
-(105, '2019-10-05', 15000, 4),
-(106, '2019-12-20', 75000, 5);
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/resource.h>
+#include <errno.h>
 
-//B) Queries
-======================================================================================================================
+int main()
+{
+    pid_t pid;
+    int nice_value;
 
-//i) Change order date of client 04 to 12/4/19
+    // Display parent process details
+    errno = 0;
+    nice_value = getpriority(PRIO_PROCESS, 0);
 
-UPDATE Orders
-SET s_order_date = '2019-04-12'
-WHERE cno = 4;
+    printf("Parent Process\n");
+    printf("Parent PID: %d\n", getpid());
+    printf("Parent Nice Value: %d\n", nice_value);
 
-//ii) Display orders in October
+    // Create child process
+    pid = fork();
 
-SELECT *
-FROM Orders
-WHERE EXTRACT(MONTH FROM s_order_date) = 10;
+    if (pid < 0)
+    {
+        perror("Fork failed");
+        return 1;
+    }
 
-//iii) Display orders in descending order of amount
+    else if (pid == 0)
+    {
+        // Child process
+        printf("\nChild Process\n");
+        printf("Child PID: %d\n", getpid());
 
-SELECT *
-FROM Orders
-ORDER BY amount DESC;
+        // Assign higher nice value
+        errno = 0;
 
-//iv) Delete all clients from Mumbai
+        if (nice(10) == -1 && errno != 0)
+        {
+            perror("Nice failed");
+            exit(1);
+        }
 
-DELETE FROM Orders
-WHERE cno IN
-(
-    SELECT cno
-    FROM Client
-    WHERE address = 'Mumbai'
-);
+        // Display updated nice value
+        nice_value = getpriority(PRIO_PROCESS, 0);
 
-DELETE FROM Client
-WHERE address = 'Mumbai';
+        printf("Updated Child Nice Value: %d\n",
+               nice_value);
 
-//v) Count orders having amount greater than 40000
+        printf("Child process completed.\n");
+        exit(0);
+    }
 
-SELECT COUNT(*) AS order_count
-FROM Orders
-WHERE amount > 40000;
+    else
+    {
+        // Parent process
+        wait(NULL);
 
-======================================================================================================================
-//C)
+        printf("\nParent process completed.\n");
+    }
 
-SELECT C.*
-FROM Client C
-JOIN Orders O
-ON C.cno = O.cno
-GROUP BY C.cno, C.name, C.address
-HAVING COUNT(O.orderno) =
-(
-    SELECT MAX(order_count)
-    FROM
-    (
-        SELECT COUNT(orderno) AS order_count
-        FROM Orders
-        GROUP BY cno
-    ) AS T
-);
-
-======================================================================================================================
+    return 0;
+}

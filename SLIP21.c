@@ -1,190 +1,196 @@
-//SLIP - 21
+/**Q.1 Write the simulation program for demand paging and show the page  
+scheduling and total number of page faults according the MFU page 
+replacement algorithm. Assume the memory of n frames. 
+Reference String: 8, 5, 7, 8, 5, 7, 2, 3, 7, 3, 5, 9, 4, 6, 2 */
 
-//Q1
-======================================================================================================================
 
 #include <stdio.h>
 
 #define MAX 100
 
-int queue[MAX];
-int front = -1;
-int rear = -1;
-
-void insert(int x)
-{
-    if(rear == MAX - 1)
-    {
-        printf("Queue Overflow\n");
-    }
-    else
-    {
-        if(front == -1)
-        {
-            front = 0;
-        }
-
-        rear++;
-        queue[rear] = x;
-    }
-}
-
-void delete()
-{
-    if(front == -1 || front > rear)
-    {
-        printf("Queue Underflow\n");
-    }
-    else
-    {
-        printf("Deleted element: %d\n", queue[front]);
-        front++;
-    }
-}
-
-void display()
-{
-    int i;
-
-    if(front == -1 || front > rear)
-    {
-        printf("Queue is empty\n");
-    }
-    else
-    {
-        printf("Queue elements:\n");
-
-        for(i = front; i <= rear; i++)
-        {
-            printf("%d ", queue[i]);
-        }
-
-        printf("\n");
-    }
-}
-
 int main()
 {
-    int n, i, x;
+    int pages[] = {8, 5, 7, 8, 5, 2, 3,
+                   7, 3, 5, 9, 4, 6, 2};
 
-    printf("Enter number of elements: ");
-    scanf("%d", &n);
+    int n = 14;
+    int frames[MAX], freq[MAX];
+    int f, i, j, faults = 0;
+    int found, victim, max;
 
-    printf("Enter elements:\n");
+    printf("Enter number of frames: ");
+    scanf("%d", &f);
 
-    for(i = 0; i < n; i++)
+    if (f <= 0 || f > MAX)
     {
-        scanf("%d", &x);
-        insert(x);
+        printf("Invalid number of frames!\n");
+        return 1;
     }
 
-    printf("\nQueue before deletion:\n");
-    display();
+    // Initialize frames and frequency counters
+    for (i = 0; i < f; i++)
+    {
+        frames[i] = -1;
+        freq[i] = 0;
+    }
 
-    delete();
+    printf("\nMFU Page Replacement Algorithm\n");
+    printf("\nPage\tFrames\t\tStatus\n");
 
-    printf("\nQueue after deletion:\n");
-    display();
+    for (i = 0; i < n; i++)
+    {
+        found = 0;
+
+        // Check whether page is present
+        for (j = 0; j < f; j++)
+        {
+            if (frames[j] == pages[i])
+            {
+                found = 1;
+                freq[j]++;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            printf("%d\t", pages[i]);
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                    printf("- ");
+                else
+                    printf("%d ", frames[j]);
+            }
+
+            printf("\tHit\n");
+        }
+        else
+        {
+            faults++;
+
+            // Find an empty frame
+            victim = -1;
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                {
+                    victim = j;
+                    break;
+                }
+            }
+
+            // If memory is full, find MFU page
+            if (victim == -1)
+            {
+                max = freq[0];
+                victim = 0;
+
+                for (j = 1; j < f; j++)
+                {
+                    if (freq[j] > max)
+                    {
+                        max = freq[j];
+                        victim = j;
+                    }
+                }
+            }
+
+            // Replace page and initialize frequency
+            frames[victim] = pages[i];
+            freq[victim] = 1;
+
+            printf("%d\t", pages[i]);
+
+            for (j = 0; j < f; j++)
+            {
+                if (frames[j] == -1)
+                    printf("- ");
+                else
+                    printf("%d ", frames[j]);
+            }
+
+            printf("\tPage Fault\n");
+        }
+    }
+
+    printf("\nTotal Page Faults = %d\n", faults);
 
     return 0;
 }
 
-======================================================================================================================
-//DBMS
-======================================================================================================================
 
-CREATE DATABASE bus_driver_db;
+/**Q.2 Write a program that demonstrates the use of nice() system call.  
+After a child process is  started using fork(), assign higher priority to the  
+child using nice() system call.            */
 
-CREATE TABLE Bus
-(
-    bno INT PRIMARY KEY,
-    capacity INT,
-    depot_name VARCHAR(50)
-);
 
-CREATE TABLE Driver
-(
-    dno INT PRIMARY KEY,
-    driver_name VARCHAR(50),
-    license_no VARCHAR(30),
-    address VARCHAR(100),
-    age INT,
-    salary DECIMAL(10,2)
-);
 
-CREATE TABLE Bus_Driver
-(
-    bno INT,
-    dno INT,
-    Date_of_duty DATE,
-    PRIMARY KEY(bno, dno, Date_of_duty),
-    FOREIGN KEY(bno) REFERENCES Bus(bno),
-    FOREIGN KEY(dno) REFERENCES Driver(dno)
-);
+#define _DEFAULT_SOURCE
 
-INSERT INTO Bus VALUES
-(101, 40, 'Kothrud Depot'),
-(102, 25, 'Swargate Depot'),
-(103, 18, 'Pimpri Depot'),
-(104, 35, 'Kothrud Depot'),
-(105, 30, 'Nashik Depot');
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/resource.h>
+#include <errno.h>
 
-INSERT INTO Driver VALUES
-(1, 'Swapnil', 'LIC101', 'Pune', 24, 30000),
-(2, 'Suresh', 'LIC102', 'Nashik', 35, 40000),
-(3, 'Sachin', 'LIC103', 'Pune', 28, 35000),
-(4, 'Amit', 'LIC104', 'Mumbai', 30, 45000),
-(5, 'Rahul', 'LIC105', 'Pune', 26, 32000);
+int main()
+{
+    pid_t pid;
+    int nice_value;
 
-INSERT INTO Bus_Driver VALUES
-(101, 1, '2009-02-12'),
-(104, 2, '2009-02-12'),
-(102, 3, '2017-01-15'),
-(103, 4, '2017-01-15'),
-(105, 5, '2017-01-15');
+    // Display parent process details
+    nice_value = getpriority(PRIO_PROCESS, 0);
 
-//B) Queries
-======================================================================================================================
+    printf("Parent Process\n");
+    printf("Parent PID: %d\n", getpid());
+    printf("Parent Nice Value: %d\n", nice_value);
 
-//i) Count buses having capacity greater than 20
+    // Create child process
+    pid = fork();
 
-SELECT COUNT(*) AS bus_count
-FROM Bus
-WHERE capacity > 20;
+    if (pid < 0)
+    {
+        perror("Fork failed");
+        return 1;
+    }
 
-//ii) Count drivers on duty on 15/01/2017
+    else if (pid == 0)
+    {
+        // Child process
+        printf("\nChild Process\n");
+        printf("Child PID: %d\n", getpid());
 
-SELECT COUNT(DISTINCT dno) AS driver_count
-FROM Bus_Driver
-WHERE Date_of_duty = '2017-01-15';
+        // Increase child nice value
+        errno = 0;
 
-//iii) Display license numbers of drivers whose name starts with S
+        if (nice(10) == -1 && errno != 0)
+        {
+            perror("Nice failed");
+            exit(1);
+        }
 
-SELECT license_no
-FROM Driver
-WHERE driver_name LIKE 'S%';
+        // Display updated nice value
+        nice_value = getpriority(PRIO_PROCESS, 0);
 
-//iv) Find average salary of drivers
+        printf("Updated Child Nice Value: %d\n",
+               nice_value);
 
-SELECT AVG(salary) AS average_salary
-FROM Driver;
+        printf("Child process completed.\n");
+        exit(0);
+    }
 
-//v) Display all details of driver Swapnil
+    else
+    {
+        // Parent process
+        wait(NULL);
 
-SELECT *
-FROM Driver
-WHERE driver_name = 'Swapnil';
+        printf("\nParent process completed.\n");
+    }
 
-======================================================================================================================
-//C)
-
-SELECT DISTINCT D.driver_name
-FROM Driver D
-JOIN Bus_Driver BD
-ON D.dno = BD.dno
-JOIN Bus B
-ON BD.bno = B.bno
-WHERE B.depot_name = 'Kothrud Depot'
-AND BD.Date_of_duty = '2009-02-12';
-
-======================================================================================================================
+    return 0;
+}
